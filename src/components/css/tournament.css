@@ -1,0 +1,201 @@
+html, body, #reactapp, .App {
+    height: 100%; width: 100%;
+}
+
+body {
+    font: 14px "Century Gothic", Futura, sans-serif;
+    margin: 0;
+}
+
+.tournament-main {
+    height: 100vh;
+    width: 100vw;
+    display: flex;
+    flex-direction: row;
+}
+
+.bracket-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.no-border {
+    flex: 0.5
+}
+
+.bracket-right {
+    width: 15vmin;
+}
+
+.bracket-right-bottom-border {
+    flex: 0.5;
+    border-color: black;
+    border-bottom: solid 3px;
+    border-left: solid 3px;
+}
+
+.bracket-right-top-border {
+    flex: 0.5;
+    border-color: black;
+    border-top: solid 3px;
+    border-left: solid 3px;
+}
+
+.bracket-left {
+    width: 15vmin;
+    border-color: black;
+    border-top: solid 3px;
+    border-bottom: solid 3px;
+    border-right: solid 3px;
+}
+
+.bracket-left-bottom-border {
+    flex: 0.5;
+    border-color: black;
+    border-bottom: solid 3px;
+    border-right: solid 3px;
+}
+
+.bracket-left-top-border {
+    flex: 0.5;
+    border-color: black;
+    border-top: solid 3px;
+    border-right: solid 3px;
+}
+
+.middle {
+    height: 3px;
+    width: 15vmin;
+    border-top: solid black 3px;
+}
+
+.name-list {
+    height: 64vmin;
+}
+
+.name {
+    padding: 0px 10px;
+    justify-content: center;
+    display: flex;
+    flex-direction: column;
+}
+
+.column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.bracket-container {
+    display: flex;
+    flex-direction: column;
+}
+
+.bracket-settings-container {
+    flex: 0.6;
+    align-items: center;
+}
+
+.tournament {
+    display: flex;
+    flex: 0.67;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    margin: 5vmin;
+}
+
+.container-options {
+    display: flex;
+    flex: 0.4;
+    flex-direction: column;
+    margin: 5vmin;
+}
+
+.horizontal-align {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.win-display {
+    display: flex;
+    font-weight: bold;
+    font-size: 32px;
+    text-align: center;
+    justify-content: center;
+    flex: 0.3;
+}
+
+.link-button {
+    text-decoration: none;
+}
+
+.ai-checkbox {
+    height: 3vmin;
+    width: 3vmin;
+}
+
+.input-height {
+    font-size: 3vmin;
+}
+
+.text-black {
+    color: black;
+}
+
+.tournament-full-error {
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+    align-items: center;
+}
+
+.tournament-full-error-text {
+    margin: 10vmin;
+    font-size: 6vmin;
+    text-align: center;
+}
+
+.container-id {
+    flex: 0.2;
+}
+
+.container-settings {
+    display: flex;
+    flex-direction: column;
+    flex: 0.8;
+}
+
+.container-name {
+    flex: 0.1;
+}
+
+.container-name-error {
+    flex: 0.05;
+}
+
+.container-best-of {
+    flex: 0.1;
+}
+
+.container-ai-checkbox {
+    flex: 0.1;
+}
+
+.container-player-limit {
+    flex: 0.1;
+}
+
+.container-shuffle {
+    flex: 0.15;
+}
+
+.container-start {
+    flex: 0.15;
+}
+
+.container-end-block {
+    flex: 0.25;
+}

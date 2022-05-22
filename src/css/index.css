@@ -1,0 +1,246 @@
+html, body, #reactapp, .App, #app {
+    height: 100%; width: 100%;
+}
+
+.App {
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+}
+
+.root-container {
+    background-color: #cff3e3;
+    height: 100vh;
+    width: 100vw;
+    margin: 0;
+    align-items: stretch;
+}
+
+.main-menu {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100vw;
+    align-items: center;
+    justify-content: center;
+    color: black;
+}
+
+.main-menu-child {
+    display: flex;
+    height: 20vh;
+    align-items: center;
+}
+
+.menu-button {
+    height: fit-content;
+    width: fit-content;
+    font-size: 3vmin;
+    border-radius: 5px;
+    vertical-align: center;
+}
+
+.project-info {
+    outline: none;
+    background-color: transparent;
+    border: none;
+}
+
+.project-info-img {
+    width: 15vmin;
+    height: 15vmin;
+}
+
+.find-room {
+    background-color: #df85ff;
+}
+
+.create-room {
+    background-color: #b3eec4;
+}
+
+.join-room {
+    background-color: #a59fcb;
+}
+
+.create-tournament {
+    background-color: #00c968;
+}
+
+.join-tournament {
+    background-color: #8b74ff;
+}
+
+.play-bot {
+    background-color: #c552a8;
+}
+
+.play-offline {
+    background-color: #fa23d7;
+}
+
+.vertical-list {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+
+.vertical-list-child {
+    text-align: center;
+    align-self: center;
+    align-items: center;
+    align-content: center;
+    margin-top: 0.5vmin;
+    margin-bottom: 0.5vmin;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.input-field {
+    font-size: 3vmin;
+    height: 5vmin;
+    width: 20vmin;
+}
+
+.small-text-label {
+    font-size: 3vmin;
+    text-align: center;
+}
+
+body {
+    font: 14px "Century Gothic", Futura, sans-serif;
+    margin: 0;
+}
+
+.title {
+    font-size: 24px;
+}
+
+ol, ul {
+    padding-left: 30px;
+}
+
+.menu-row {
+    display: flex;
+    flex-direction: row;
+    border-width: 0;
+}
+
+.menu-row:first-child {
+    border-width: 5px 0 5px;
+    border-color: black;
+    border-style: solid;
+}
+
+.menu-row:last-child {
+    border-width: 5px 0 5px;
+    border-color: black;
+    border-style: solid;
+}
+
+
+.menu-cell {
+    display: flex;
+    flex-direction: column;
+    height: 30vmin;
+    width: 30vmin;
+    align-items: center;
+    justify-content: space-around;
+    align-content: center;
+    font-size: 5vmin;
+    color: black;
+    font-weight: bold;
+    line-height: 6vmin;
+    text-align: center;
+    box-sizing: border-box;
+    padding: 0;
+}
+
+.link {
+    text-decoration: none;
+}
+
+.menu-cell-inside {
+    display: flex;
+    height: 100%;
+    width: 100%;
+    flex-direction: column;
+    justify-content: space-evenly;
+}
+
+.donate-inside {
+    width: 50%;
+}
+
+.menu-cell-first {
+    border-width: 0px 5px 0px;
+    border-color: black;
+    border-style: solid;
+}
+
+.menu-cell-middle {
+    border-width: 0px;
+    border-color: black;
+    border-style: solid;
+}
+
+.menu-cell-last {
+    border-width: 0px 5px 0px;
+    border-color: black;
+    border-style: solid;
+}
+
+.bottom-container {
+    display: flex;
+    align-content: center;
+    justify-content: center;
+    width: 100%;
+    height: 6vmin;
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    align-content: space-evenly;
+}
+
+.status {
+    margin-bottom: 10px;
+}
+
+.square:focus {
+    outline: none;
+}
+
+.kbd-navigation .square:focus {
+    background: #ddd;
+}
+
+.game {
+    display: flex;
+    flex-direction: column;
+}
+
+.game-info {
+    margin-left: 20px;
+}
+
+.score-display {
+    text-align: center;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.text-error {
+    color: red;
+    font-size: 2vmin;
+}
+
+.text-normal {
+    color: black;
+    font-size: 3vmin;
+    line-height: 3vmin;
+}

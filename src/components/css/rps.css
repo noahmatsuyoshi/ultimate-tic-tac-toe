@@ -1,0 +1,75 @@
+html, body, #reactapp, .App {
+    height: 100%; width: 100%;
+}
+
+body {
+    font: 14px "Century Gothic", Futura, sans-serif;
+    margin: 0;
+}
+
+.parent-container {
+    display: flex;
+    flex-direction: column;
+    height: 80vh;
+    width: 100vw;
+}
+
+.tiebreaker {
+    flex: 0.1;
+    font-size: 32px;
+    text-align: center;
+    font-weight: bold;
+}
+
+.rps-game {
+    flex: 0.4;
+    display: flex;
+    flex-direction: row;
+    align-content: space-around;
+    justify-content: space-around;
+}
+
+.rps-choice {
+    flex: 0.33;
+    display: flex;
+    flex-direction: column;
+    align-content: center;
+}
+
+.rps-image-container {
+    flex: 0.6;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+    outline: none;
+    background-color: transparent;
+    border: none;
+}
+
+.rps-arrow-container {
+    flex: 0.4;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+}
+
+.rps-arrow {
+    height: 8vh;
+    width: 5vh;
+}
+
+.opp-choice-container {
+    flex: 0.25;
+    font-size: 20px;
+    text-align: center;
+    font-weight: bold;
+}
+
+.tie-container {
+    flex: 0.25;
+    font-size: 20px;
+    text-align: center;
+    font-weight: bold;
+}
