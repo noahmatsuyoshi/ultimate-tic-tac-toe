@@ -166,7 +166,7 @@ function OfflineOption(props) {
 
 function ProjectInfo(props) {
   return (
-      <a href="https://github.com/noahmatsuyoshi/learn-react-tictactoe-mega" target="_blank" className="link">
+      <a href="https://github.com/noahmatsuyoshi/ultimate-tic-tac-toe" target="_blank" className="link">
           <button className='menu-cell menu-cell-middle project-info link' type='button'>
               <img className="project-info-img" src={process.env.PUBLIC_URL + "/github.png"}/>
               <div className="link">
