@@ -1,5 +1,5 @@
 import {React, PureComponent, useRef, Component, useState} from 'react';
-import { useParams, Link } from 'react-router-dom'
+import {useParams, Link, Redirect} from 'react-router-dom'
 import '../css/tournament.css';
 import { useSocketTournament } from '../../js/socket';
 import ErrorMessage from './errorMessage';
