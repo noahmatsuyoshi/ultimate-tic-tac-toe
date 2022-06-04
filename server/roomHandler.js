@@ -27,7 +27,7 @@ class RoomHandler extends SocketHandler {
 
     setupUpdateEvent() {
         this.socket.on(globalConstants.eventTypes.UPDATE_EVENT, () => {
-            if(Object.keys(this.manager.playerTokens).length >= 2) {
+            if(this.manager.playerTokens.keys.length >= 2) {
                 const data = this.manager.getClientData(this.token);
                 this.socket.emit(globalConstants.eventTypes.UPDATE_EVENT, data);
             }
@@ -63,30 +63,44 @@ class RoomHandler extends SocketHandler {
 }
 
 class RoomManager extends Manager {
-    constructor(id, token1, token2, tourData=null) {
+    constructor(id, dynamoHelper, token1, tourData=null, oldState=null) {
         super(id);
         if(tourData) this.tourData = tourData;
         this.type = 'r';
+        this.dynamoHelper = dynamoHelper;
         this.rpsMoves = null;
         this.rpsWinnerToken = null;
-        this.playerTokens = {
-            [token1]: "",
-        };
-        if(token2) this.playerTokens[token2] = "";
+        this.playerTokens = new globalConstants.TwoWayMap();
+        this.playerTokens.set(token1, "");
         this.firstPlayer = token1;
         this.room = new Room(this);
+        if(oldState) {
+            for(let k in oldState) {
+                if(['rpsMoves', 'playerTokens', 'firstPlayer'].includes(k)) {
+                    this[k] = oldState[k];
+                } else {
+                    this.room[k] = oldState[k];
+                }
+            }
+        } else {
+            this.dynamoHelper.updateGame(id, {
+                "firstPlayer": this.firstPlayer,
+                "dateCreated": Date.now().toString(),
+            });
+        }
     }
 
     addToken(token, socket) {
-        if(token in this.playerTokens) return;
-        if(Object.keys(this.playerTokens).length >= 2) {
-            console.log("Room full: " + Object.keys(this.playerTokens));
+        if(this.playerTokens.hasKey(token)) return;
+        if(this.playerTokens.keys.length >= 2) {
+            console.log("Room full: " + this.playerTokens.keys);
             socket.emit(globalConstants.eventTypes.ERROR_EVENT, {errorMessage: globalConstants.errorMessages.ROOM_FULL});
         } else {
-            this.playerTokens[token] = "";
-            if(Object.keys(this.playerTokens).length === 2) {
+            this.playerTokens.set(token, "");
+            if(this.playerTokens.keys.length === 2) {
                 this.forceAllClientsUpdate();
             }
+            this.dynamoHelper.updateGame(this.id, {"playerTokens": JSON.stringify(this.playerTokens.map)});
         }
     }
 
@@ -96,16 +110,29 @@ class RoomManager extends Manager {
     }
 
     isGameOver() {
-        return this.calculateWinner(this.room.wonBoards) !== null;
+        const winner = this.calculateWinner(this.room.wonBoards);
+        if(winner) {
+            this.dynamoHelper.updateGame(this.id, {
+                "winnerToken": winner,
+                [`boards_${this.gameCount}`]: winner,
+            });
+        }
+        return winner !== null;
     }
 
     newMove(move, token) {
         this.room.newMove(move, token);
+        this.dynamoHelper.updateGame(this.id, {
+            "boards": JSON.stringify(this.room.boards),
+            "wonBoards": JSON.stringify(this.room.wonBoards),
+            "nextIndex": this.room.nextIndex.toString(),
+            "xNext": this.room.xNext,
+        });
     }
 
     resetGame() {
-        for (let t in this.playerTokens) {
-            if(this.playerTokens[t] !== this.firstPlayer)
+        for (let t in this.playerTokens.keys) {
+            if(t !== this.firstPlayer)
                 this.firstPlayer = t;
             this.playerTokens[t] = "";
         }
@@ -113,51 +140,60 @@ class RoomManager extends Manager {
     }
 
     getOtherToken(token) {
-        for (let t in this.playerTokens) {
+        for (let t in this.playerTokens.map) {
             if(t !== token) return t;
         }
     }
 
+    fillRPSData(data, token) {
+        data.rps = {
+            active: !(token in this.rpsMoves),
+            on: true,
+            winner: this.rpsWinnerToken ? this.rpsWinnerToken === token : null,
+            tie: this.rpsTie,
+        };
+        if(token in this.rpsMoves) {
+            data.rps.move = this.rpsMoves[token];
+        }
+        const otherToken = this.getOtherToken(token);
+        if(otherToken in this.rpsMoves && this.rpsWinnerToken) {
+            data.rps.oppMove = this.rpsMoves[otherToken];
+        }
+    }
+
+    fillTourData(data) {
+        const tourData = Object.assign({}, this.tourData);
+        data.tourData = tourData;
+        const gameWinCount = Object.assign({}, tourData.gameWinCount);
+        delete tourData.gameWinCount;
+        tourData.gameWinCount = {}
+        for(let k in gameWinCount) {
+            tourData.gameWinCount[tourData.tokenToName[k]] = gameWinCount[k];
+        }
+        delete tourData.tokenToName;
+    }
+
     getClientData(token) {
         const data = {};
-        data.avatar = this.isTokenRegistered(token) ? this.playerTokens[token] : "";
+        data.avatar = this.isTokenRegistered(token) ? this.playerTokens.get(token) : "";
         data.firstPlayer = this.firstPlayer === token;
         if(this.rpsMoves)  {
-            data.rps = {
-                active: !(token in this.rpsMoves),
-                on: true,
-                winner: this.rpsWinnerToken ? this.rpsWinnerToken === token : null,
-                tie: this.rpsTie,
-            };
-            if(token in this.rpsMoves) {
-                data.rps.move = this.rpsMoves[token];
-            }
-            const otherToken = this.getOtherToken(token);
-            if(otherToken in this.rpsMoves && this.rpsWinnerToken) {
-                data.rps.oppMove = this.rpsMoves[otherToken];
-            }
+            this.fillRPSData(data, token)
         }
         this.room.updateGame(data);
         if('tourData' in this) {
-            const tourData = Object.assign({}, this.tourData);
-            data.tourData = tourData;
-            const gameWinCount = Object.assign({}, tourData.gameWinCount);
-            delete tourData.gameWinCount;
-            tourData.gameWinCount = {}
-            for(let k in gameWinCount) {
-                tourData.gameWinCount[tourData.tokenToName[k]] = gameWinCount[k];
-            }
-            delete tourData.tokenToName;
+            this.fillTourData(data);
         }
         return data;
     }
 
     setAvatar(data, token) {
-        const tokens = Object.keys(this.playerTokens);
+        const tokens = this.playerTokens.keys;
         tokens.splice(tokens.indexOf(token), 1);
         const otherToken = tokens[0];
-        this.playerTokens[token] = data.avatar;
-        this.playerTokens[otherToken] = data.avatar === "X" ? "O" : "X";
+        this.playerTokens.set(token, data.avatar);
+        this.playerTokens.set(otherToken, data.avatar === "X" ? "O" : "X");
+        this.dynamoHelper.updateGame(this.id, {"playerTokens": JSON.stringify(this.playerTokens.map)});
     }
 
     startRps() {
@@ -181,6 +217,7 @@ class RoomManager extends Manager {
         else [winnerToken, loserToken] = [rpsTokens[1], rpsTokens[0]];
         if(winnerToken) {
             this.rpsWinnerToken = winnerToken;
+            this.dynamoHelper.updateGame(this.id, {"rpsMove": JSON.stringify(this.rpsMoves)})
             this.dynamoHelper.winGame(winnerToken, loserToken);
             if('tourData' in this) {
                 this.tourWin(winnerToken);
@@ -209,12 +246,12 @@ class Room {
         this.boards = boards;
         this.wonBoards = Array(9).fill(null);
         this.xNext = true;
-        this.nextIndex = null;
+        this.nextIndex = -1;
     }
 
     isMoveValid(move, token) {
-        if((this.manager.playerTokens[token] === "X") !== this.xNext) return false;
-        if(this.nextIndex !== null && move.gameIndex !== this.nextIndex) return false;
+        if((this.manager.playerTokens.get(token) === "X") !== this.xNext) return false;
+        if(this.nextIndex !== -1 && move.gameIndex !== this.nextIndex) return false;
         if(this.wonBoards[move.gameIndex] !== null) return false;
         if(this.boards[move.gameIndex][move.boardIndex] !== null) return false;
         return true;
@@ -235,10 +272,10 @@ class Room {
         else if(winner !== null) {
             let winnerToken;
             let loserToken;
-            for(let k in this.manager.playerTokens) {
-                if(this.manager.playerTokens[k] === winner) winnerToken = k;
-                else loserToken = k;
-            }
+            this.manager.playerTokens.entries.forEach(e => {
+                if(e[1] === winner) winnerToken = e[0];
+                else loserToken = e[0];
+            })
             this.manager.dynamoHelper.winGame(winnerToken, loserToken);
             if('tourData' in this.manager)
                 this.manager.tourWin(winnerToken);
@@ -247,11 +284,11 @@ class Room {
 
     newMove(move, token) {
         if(!this.isMoveValid(move, token)) return;
-        this.boards[move.gameIndex][move.boardIndex] = this.manager.playerTokens[token];
+        this.boards[move.gameIndex][move.boardIndex] = this.manager.playerTokens.get(token);
         this.updateWonBoards(move.gameIndex);
 
         let nextIndex = move.boardIndex;
-        if(this.wonBoards[nextIndex] !== null) nextIndex = null;
+        if(this.wonBoards[nextIndex] !== null) nextIndex = -1;
         this.nextIndex = nextIndex;
         this.xNext = !this.xNext;
     }
@@ -266,9 +303,11 @@ class Room {
 
 module.exports.registerRoomManager = async (id2manager, socket, token, id, dynamoHelper) => {
     let manager;
-    if(!(id in id2manager)) manager = new RoomManager(id, token);
+    if (!(id in id2manager)) {
+        const gameData = await dynamoHelper.getGame(id);
+        manager = new RoomManager(id, dynamoHelper, token, null, gameData);
+    }
     else manager = id2manager[id];
-    manager.dynamoHelper = dynamoHelper;
     await initHandler(manager, socket, id, token, RoomHandler);
     manager.addToken(token, socket);
     manager.initRoom();

@@ -81,9 +81,10 @@ export function sleep(duration) {
 export function generateUID() {
     var firstPart = (Math.random() * 46656) | 0;
     var secondPart = (Math.random() * 46656) | 0;
+    const instanceIndex = Math.floor((Math.random() * 3) + 1).toString();
     firstPart = ("000" + firstPart.toString(36)).slice(-3);
     secondPart = ("000" + secondPart.toString(36)).slice(-3);
-    return firstPart + secondPart;
+    return instanceIndex + firstPart + secondPart;
 }
 
 const playerTokenKeyString = 'playerToken=';

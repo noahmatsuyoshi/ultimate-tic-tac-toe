@@ -136,7 +136,7 @@ function OnlineGame(props) {
     myTurn: false,
     boards: null,
     wonBoards: null,
-    nextIndex: null,
+    nextIndex: -1,
     allowRestart: false,
   });
   const [avatar, setAvatar] = useState("");
@@ -167,7 +167,7 @@ export function OfflineGame(props) {
     myTurn: true,
     boards: Array(9).fill(Array(9).fill(null)),
     wonBoards: Array(9).fill(null),
-    nextIndex: null,
+    nextIndex: -1,
   });
   const [tourData, setTourData] = useState({
     tourID: "",
@@ -223,7 +223,7 @@ class Game extends PureComponent {
 
   handleClick(gameIndex, boardIndex) {
     if(this.props.spectator) return;
-    if(this.props.gameData.nextIndex !== null && this.props.gameData.nextIndex !== gameIndex) return;
+    if(this.props.gameData.nextIndex !== -1 && this.props.gameData.nextIndex !== gameIndex) return;
     if(this.props.sendNewMove && !this.props.gameData.myTurn) return;
     if(this.props.winner) return;
     if(this.props.gameData.boards[gameIndex][boardIndex] !== null) return;
@@ -241,7 +241,7 @@ class Game extends PureComponent {
       
       let nextIndex = boardIndex;
       if(gameData.wonBoards[nextIndex] !== null) {
-        nextIndex = null;
+        nextIndex = -1;
       }
       gameData.nextIndex = nextIndex;
       gameData.myTurn = !gameData.myTurn;

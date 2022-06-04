@@ -19,8 +19,8 @@ const Matchmaking = require('./server/matchmaking');
 const DynamoHelper = require('./server/dynamoHelper');
 
 const generateUID = () => {
-    var firstPart = (Math.random() * 46656) | 0;
-    var secondPart = (Math.random() * 46656) | 0;
+    let firstPart = (Math.random() * 46656) | 0;
+    let secondPart = Math.floor((Math.random() * 3) + 1) | 0;
     firstPart = ("000" + firstPart.toString(36)).slice(-3);
     secondPart = ("000" + secondPart.toString(36)).slice(-3);
     return firstPart + secondPart;
@@ -56,12 +56,16 @@ io.on("connection", async (socket) => {
     const clientCookie = cookie.parse(socket.request.headers.cookie);
     if(!clientCookie.playerToken) return;
     const token = globalConstants.sanitize(clientCookie.playerToken);
-    const user = await dynamoHelper.getUser(token);
-    console.log("user")
-    console.log(user);
+    await dynamoHelper.getUser(token);
     let { roomID, tournament, matchmaking } = socket.handshake.query;
-    if(roomID)
+    if(roomID) {
+        if(isNaN(parseInt(roomID.charAt(0)))) return;
         roomID = globalConstants.sanitize(roomID).toLowerCase();
+        const instanceIndex = parseInt(roomID.charAt(0));
+        if(!dynamoHelper.initializedTournaments.has(instanceIndex)) {
+            await dynamoHelper.initializeRoomsForTournaments(instanceIndex, id2manager);
+        }
+    }
     let roomType = "";
     if((roomID !== 'undefined') && (roomID in id2manager)) {
         roomType = id2manager[roomID].type;

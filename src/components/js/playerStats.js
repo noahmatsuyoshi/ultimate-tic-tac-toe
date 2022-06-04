@@ -38,7 +38,7 @@ async function getUserStats(token, setStats) {
             playerStatsList.forEach(statName => {
                 if(!stats[statName])
                     console.log(stats[statName])
-                    newData.push([convertCamelCaseToUpper(statName), Object.values(stats[statName])[0]]);
+                    newData.push([convertCamelCaseToUpper(statName), stats[statName]]);
             })
             setStats(newData);
         });

@@ -119,7 +119,12 @@ class TournamentHandler extends SocketHandler {
 
     setupUpdateEvent() {
         this.socket.on(globalConstants.eventTypes.UPDATE_EVENT, () => {
-            const data = Object.assign({}, this.manager.settings);
+            const data = Object.assign({}, {
+                ...this.manager.settings,
+                started: this.manager.started,
+                survived: this.manager.survivedNames,
+                bracket: this.manager.fullNameBracket,
+            });
             data.firstPlayer = this.token === this.manager.firstPlayer;
             if(this.token in this.manager.tokenToRoom) 
                 data.roomID = this.manager.tokenToRoom[this.token];
@@ -140,23 +145,42 @@ class TournamentHandler extends SocketHandler {
 }
 
 class TournamentManager extends Manager {
-    constructor(id2manager, id, firstToken) {
+    constructor(id2manager, id, firstToken, dynamoHelper, oldState=null) {
         super(id);
         this.id2manager = id2manager;
         this.type = 't';
         this.tokenToName = new globalConstants.TwoWayMap();
         this.firstPlayer = firstToken;
+        this.dynamoHelper = dynamoHelper;
         this.bracket = [[]];
+        this.fullBracket = [[]];
+        this.nameBracket = [[]];
+        this.fullNameBracket = [[]];
         this.survived = {};
         this.tokenToRoom = {};
         this.started = false;
         this.numInitialPlayers = null;
+        this.winnerToken = "";
         this.settings = {
-            bracket: [[]],
             bestOf: 1,
             ai: true,
             playerLimit: null,
         };
+        if(oldState && (Object.keys(oldState).length > 0)) {
+            for(let k in oldState) {
+                this[k] = oldState[k];
+            }
+            if('started' in oldState && oldState['started']) {
+                this.initializeRooms();
+            }
+        } else {
+            this.dynamoHelper.updateTour(id, {
+                "firstPlayer": firstToken,
+                "started": false,
+                "dateCreated": Date.now().toString(),
+                "instanceIndex": id.charAt(0).toString(),
+            });
+        }
     }
 
     addToken(token) {
@@ -173,7 +197,7 @@ class TournamentManager extends Manager {
         this.updateClients();
     }
 
-    updateBracketData() {
+    fillBrackets() {
         const nameBracket = [];
         this.bracket.forEach((tokenList) => {
             const nameList = [];
@@ -183,18 +207,22 @@ class TournamentManager extends Manager {
             nameBracket.push(nameList);
         });
         nameBracket[0] = this.insertMissing(nameBracket[0]);
-        this.settings.bracket = nameBracket;
+        this.fullNameBracket = nameBracket;
 
-        const survived = {};
+        this.fullBracket[0] = this.insertMissing(this.bracket[0].slice())
+    }
+
+    updateSurvived() {
+        const survivedNames = {};
         for(let token in this.survived) {
-            survived[this.convertTokenToName(token)] = this.survived[token];
+            survivedNames[this.convertTokenToName(token)] = this.survived[token];
         }
-        this.settings.survived = survived;
-        this.settings.started = this.started;
+        this.survivedNames = survivedNames;
     }
 
     updateClients() {
-        this.updateBracketData();
+        this.fillBrackets();
+        this.updateSurvived();
         this.forceAllClientsUpdate();
     }
 
@@ -223,9 +251,6 @@ class TournamentManager extends Manager {
     }
 
     initializeMatch(round, position, token1, token2) {
-        console.log(`round: ${round}`);
-        console.log(`position: ${position}`);
-        console.log(`bracket length: ${this.bracket.length}`)
         const roomID = `${this.id}_${round}_${position}`;
         this.tokenToRoom[token1] = roomID;
         this.tokenToRoom[token2] = roomID;
@@ -253,22 +278,34 @@ class TournamentManager extends Manager {
             }
             if(token1.startsWith("AI") || token2.startsWith("AI"))
                 this.id2manager[roomID] = new BotManager(roomID, tourData)
-            else
-                this.id2manager[roomID] = new RoomManager(roomID, token1, token2, tourData)
+            else {
+                this.dynamoHelper.getGame(roomID).then(gameData => {
+                    let firstToken = null;
+                    if(!gameData || (Object.keys(gameData).length === 0)) {
+                        firstToken = Math.random() < 0.5 ? token1 : token2;
+                        const secondToken = firstToken === token1 ? token2 : token1;
+                        this.dynamoHelper.updateGame(roomID, {
+                            "playerTokens": JSON.stringify({
+                                [firstToken]: "X",
+                                [secondToken]: "O",
+                            })
+                        })
+                    }
+                    this.id2manager[roomID] = new RoomManager(roomID, this.dynamoHelper, firstToken, tourData, gameData);
+                })
+            }
         }
     }
 
     onWin(round, position, winnerToken) {
         if (this.bracket.length < round + 2) {
-            const newRound = new Array(this.settings.bracket[0].length / Math.pow(2, round + 1));
-            this.bracket.push(
-                newRound.fill(null)
-            );
+            const newRound = new Array(this.bracket[0].length / Math.pow(2, round + 1));
+            this.bracket.push(newRound.fill(null));
         }
         const winnerPos = this.bracket[round].indexOf(winnerToken);
         const lostPos = winnerPos % 2 === 1 ? winnerPos - 1 : winnerPos + 1;
         const lostToken = this.bracket[round][lostPos];
-        if (!lostToken.startsWith("AI")) {
+        if (!lostToken.startsWith("AI") && (lostToken !== "")) {
             const placement = `${this.numInitialPlayers - Math.pow(round + 1, 2) + 1}/${this.numInitialPlayers}`;
             this.dynamoHelper.addTournamentPlacement(lostToken, placement);
         }
@@ -281,24 +318,45 @@ class TournamentManager extends Manager {
             if (this.bracket[round + 1][rivalIndex] !== null) {
                 this.initializeMatch(round + 1, newPos, winnerToken, this.bracket[round + 1][rivalIndex]);
             }
-        } else if (!lostToken.startsWith("AI")) {
+        } else if (!lostToken.startsWith("AI") && (lostToken !== "")) {
             const placement = `1/${this.numInitialPlayers}`;
             this.dynamoHelper.addTournamentPlacement(winnerToken, placement);
+            this.dynamoHelper.updateTour(this.id, {"winnerToken": winnerToken});
         }
+        this.dynamoHelper.updateTour(this.id, {
+            "survived": JSON.stringify(this.survived),
+            "tokenToRoom": JSON.stringify(this.tokenToRoom),
+            "bracket": JSON.stringify(this.bracket)
+        });
         this.updateClients();
     }
 
-    initializeMatches() {
+    initializeRooms() {
+        if(this.winnerToken !== "") return;
         this.numInitialPlayers = this.bracket[0].length;
-        let tokens = this.bracket[0].slice();
-        tokens = this.insertMissing(tokens);
-        tokens = this.distinctAITokens(tokens);
-        this.bracket[0] = tokens;
-        for(let i = 0; i < tokens.length; i += 2) {
-            this.initializeMatch(0, i, tokens[i], tokens[i+1]);
-            this.survived[tokens[i]] = true;
-            this.survived[tokens[i+1]] = true;
-        }
+        this.bracket.forEach(bracket => {
+            let tokens = bracket.slice();
+            tokens = this.insertMissing(tokens);
+            tokens = this.distinctAITokens(tokens);
+            for(let i = 0; i < tokens.length; i += 2) {
+                this.initializeMatch(0, i, tokens[i], tokens[i+1]);
+                this.survived[tokens[i]] = true;
+                this.survived[tokens[i+1]] = true;
+            }
+        })
+    }
+
+    async initializeMatches() {
+        this.bracket = this.fullBracket;
+        await this.initializeRooms();
+        await this.dynamoHelper.updateTour(this.id, {
+            "started": true,
+            "tokenToName": JSON.stringify(this.tokenToName.map),
+            "tokenToRoom": JSON.stringify(this.tokenToRoom),
+            "survived": JSON.stringify(this.survived),
+            "bracket": JSON.stringify(this.bracket),
+            "settings": JSON.stringify(this.settings)
+        });
     }
 
     getNameCopy(name) {
@@ -316,9 +374,10 @@ module.exports.TournamentManager = TournamentManager;
 
 module.exports.registerTournamentManager = async (id2manager, socket, token, id, dynamoHelper) => {
     let manager;
-    if(!(id in id2manager)) manager = new TournamentManager(id2manager, id, token);
-    else manager = id2manager[id];
-    manager.dynamoHelper = dynamoHelper;
+    if(!(id in id2manager)) {
+        const tourData = await dynamoHelper.getTour(id);
+        manager = new TournamentManager(id2manager, id, token, dynamoHelper, tourData);
+    } else manager = id2manager[id];
     await initHandler(manager, socket, id, token, TournamentHandler);
     manager.addToken(token);
     manager.updateClients();

@@ -7,7 +7,7 @@ class Manager {
     }
 
     isTokenRegistered(token) {
-        return token in this.playerTokens;
+        return this.playerTokens.keys.includes(token);
     }
 
     calculateWinner(board) {

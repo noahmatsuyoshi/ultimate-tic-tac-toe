@@ -50,7 +50,8 @@ export default function Tournament() {
                 bracket: data.bracket,
                 survived: data.survived,
                 firstPlayer: data.firstPlayer,
-                name: data.name
+                name: data.name,
+                started: data.started,
             });
         }
         if(panelRef.current) {
@@ -246,6 +247,7 @@ class Brackets extends PureComponent {
             survived: {},
             firstPlayer: false,
             name: "Player",
+            started: false,
         }
 
         this.updateBracket = this.updateBracket.bind(this);
@@ -257,7 +259,7 @@ class Brackets extends PureComponent {
     }
 
     kickButton(playerName) {
-        if(this.state.firstPlayer && (this.state.name !== playerName))
+        if(!this.state.started && playerName && this.state.firstPlayer && (this.state.name !== playerName))
             return (<button onClick={() => {
                 this.props.kickPlayer(playerName)
             }}>

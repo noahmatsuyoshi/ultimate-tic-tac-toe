@@ -13,12 +13,14 @@ const dynamodbTableInfo = Object.freeze({
         {
             name: "ultimatetictactoe.wait-time",
             keySchema: {
-                match_date: "HASH",
-                match_time: "RANGE"
+                match_datetime: "HASH",
+            },
+            secondKeySchema: {
+                dateCreated: {match_date: "HASH", include: "ALL"},
             },
             typeSchema: {
                 match_date: "S",
-                match_time: "S"
+                match_time: "S",
             },
         },
         {
@@ -26,8 +28,12 @@ const dynamodbTableInfo = Object.freeze({
             keySchema: {
                 token: "HASH",
             },
+            secondKeySchema: {
+                dateCreated: {type: "HASH", include: "KEYS_ONLY"},
+            },
             typeSchema: {
                 token: "S",
+                dateCreated: "N",
             },
         },
         {
@@ -35,19 +41,40 @@ const dynamodbTableInfo = Object.freeze({
             keySchema: {
                 roomID: "HASH",
             },
+            secondKeySchema: {
+                dateCreated: {type: "HASH", include: "KEYS_ONLY"},
+            },
             typeSchema: {
                 roomID: "S",
+                dateCreated: "N",
             },
         },
         {
-            name: "ultimatetictactoe.tournaments",
+            name: "ultimatetictactoe.activeTournaments",
             keySchema: {
                 tourID: "HASH",
             },
+            secondKeySchema: {
+                instanceIndex: {type: "HASH", include: "ALL"},
+            },
             typeSchema: {
                 tourID: "S",
+                instanceIndex: "N",
             },
-        }
+        },
+        {
+            name: "ultimatetictactoe.oldTournaments",
+            keySchema: {
+                tourID: "HASH",
+            },
+            secondKeySchema: {
+                dateCreated: {type: "HASH", include: "KEYS_ONLY"},
+            },
+            typeSchema: {
+                tourID: "S",
+                dateCreated: "N",
+            },
+        },
     ]
 });
 module.exports.dynamodbTableInfo = dynamodbTableInfo;
@@ -138,6 +165,10 @@ class TwoWayMap {
 
     get values() {
         return Object.keys(this.reverseMap);
+    }
+
+    get entries() {
+        return Object.entries(this.map);
     }
 }
 module.exports.TwoWayMap = TwoWayMap;
