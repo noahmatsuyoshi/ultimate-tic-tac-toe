@@ -34,7 +34,8 @@ export const useSocketTournament = (roomID, updateClient, errorCallback) => {
         if (!socketRef.current) {
             socketRef.current = socketIOClient(globalConstants.SOCKET_SERVER_URI, {
                 query: { roomID, tournament: true },
-                transports: ['websocket', 'polling']
+                transports: ['websocket', 'polling'],
+                upgrade: false,
             });
             firstConnect = true;
         }
