@@ -66,7 +66,7 @@ io.on("connection", async (socket) => {
             await dynamoHelper.initializeRoomsForTournaments(instanceIndex, id2manager);
         }
     }
-    let roomType = "b";
+    let roomType = "";
     if((roomID !== 'undefined') && (roomID in id2manager)) {
         roomType = id2manager[roomID].type;
     } else if(tournament) {
@@ -74,6 +74,8 @@ io.on("connection", async (socket) => {
     } else if(matchmaking) {
         console.log("matchmaking user entered");
         matchmakingManager.addToken(token, socket);
+    } else if(!roomID || roomID === 'undefined') {
+        roomType = "b";
     }
 
     if(!matchmaking) {
