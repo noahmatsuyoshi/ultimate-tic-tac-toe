@@ -126,7 +126,8 @@ export const useSocket = (roomID, setGameData, setAvatar, setTourData, setSpecta
         if (!socketRef.current) {
             socketRef.current = socketIOClient(globalConstants.SOCKET_SERVER_URI, {
                 query: { roomID },
-                transports: ['websocket', 'polling']
+                transports: ['websocket', 'polling'],
+                path: `/socket.io/${roomID.charAt(0)}/`,
             });
             firstConnect = true;
         }

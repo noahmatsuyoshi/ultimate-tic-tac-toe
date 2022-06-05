@@ -133,7 +133,7 @@ function ChooseAvatar(props) {
 function OnlineGame(props) {
   const [gameData, setGameData] = useState({
     firstPlayer: false,
-    myTurn: false,
+    myTurn: true,
     boards: null,
     wonBoards: null,
     nextIndex: -1,

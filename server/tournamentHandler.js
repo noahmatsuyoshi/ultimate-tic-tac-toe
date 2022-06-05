@@ -336,18 +336,19 @@ class TournamentManager extends Manager {
         this.numInitialPlayers = this.bracket[0].length;
         this.bracket.forEach(bracket => {
             let tokens = bracket.slice();
-            tokens = this.insertMissing(tokens);
-            tokens = this.distinctAITokens(tokens);
             for(let i = 0; i < tokens.length; i += 2) {
-                this.initializeMatch(0, i, tokens[i], tokens[i+1]);
                 this.survived[tokens[i]] = true;
                 this.survived[tokens[i+1]] = true;
+                if(tokens[i] !== null && tokens[i+1] !== null)
+                this.initializeMatch(0, i, tokens[i], tokens[i+1]);
             }
         })
     }
 
     async initializeMatches() {
         this.bracket = this.fullBracket;
+        this.bracket[0] = this.insertMissing(this.bracket[0]);
+        this.bracket[0] = this.distinctAITokens(this.bracket[0]);
         await this.initializeRooms();
         await this.dynamoHelper.updateTour(this.id, {
             "started": true,
