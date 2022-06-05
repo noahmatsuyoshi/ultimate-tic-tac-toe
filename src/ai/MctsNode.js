@@ -8,7 +8,7 @@ export class MctsNode {
                 boards=Array(9).fill(Array(9).fill(null)), 
                 wonBoards=Array(9).fill(null), 
                 parent=null, 
-                nextIndex=null, 
+                nextIndex=-1,
                 prevMove,
                 rootDistance=0,
                 turnNumber=0) {
@@ -36,7 +36,7 @@ export class MctsNode {
 
     isMoveValid(move) {
         if(this.botsTurn) return false;
-        if(this.nextIndex !== null && move[0] !== this.nextIndex) return false;
+        if(this.nextIndex !== -1 && move[0] !== this.nextIndex) return false;
         if(this.wonBoards[move[0]] !== null) return false;
         if(this.boards[move[0]][move[1]] !== null) return false;
         return true;
@@ -149,7 +149,7 @@ export class MctsNode {
             wonBoards[move[0]] = winner;
         }
         let nextIndex = move[1];
-        if(wonBoards[nextIndex]) nextIndex = null;
+        if(wonBoards[nextIndex]) nextIndex = -1;
 
         // expand
         const child = new MctsNode(this.botAvatar,

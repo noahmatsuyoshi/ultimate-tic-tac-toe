@@ -225,7 +225,6 @@ class DynamoHelper {
         }
         params.ExpressionAttributeNames["#FL"] = "lastModified";
         params.ExpressionAttributeValues[":vL"] = {S: Date.now().toString()};
-        params.UpdateExpression += ", #FL = :vL";
     }
 
     async setFields(idObj, tableName, field_dict) {
@@ -245,8 +244,9 @@ class DynamoHelper {
             updateExpressions.push(`#F${i} = :v${i}`);
             i++;
         }
-        params.UpdateExpression = `SET ${updateExpressions.join(", ")}`
         this.appendLastModifiedToParams(params);
+        params.UpdateExpression = `SET #FL = :vL`
+        if(updateExpressions.length > 0) params.UpdateExpression += `, ${updateExpressions.join(", ")}`
         await this.dynamodb.updateItem(
             params, (err, data) =>
                 this.checkError(err, data, "failed to updateFields")

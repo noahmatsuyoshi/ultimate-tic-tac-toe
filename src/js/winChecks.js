@@ -24,7 +24,7 @@ export const calculateWinner = (board) => {
     for (let i = 0; i < lines.length; i++) {
         const [a, b, c] = lines[i];
         if (board[a] && board[a] === board[b] && board[a] === board[c] && board[a] !== 'T') {
-            return [a, b, c];
+            return board[a];
         }
     }
     return null;
@@ -32,9 +32,9 @@ export const calculateWinner = (board) => {
 
 export const calculateTie = (boards, wonBoards) => {
     if(!wonBoards.includes(null)) return true;
-    for (let i in boards) {
-        console.log(boards[i]);
-        if(boards[i].includes(null))
+    for (let board of boards) {
+        console.log(board);
+        if(board && board.includes(null))
             return false;
     }
     return true;

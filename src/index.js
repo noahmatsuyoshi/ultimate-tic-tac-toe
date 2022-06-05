@@ -211,15 +211,6 @@ function PlayerStatsOption() {
     );
 }
 
-function PlayContainer(props) {
-    const {roomID} = useParams();
-    const urlSplit = window.location.href.split("/");
-    if (urlSplit[urlSplit.length - 2] !== roomID) {
-        return (<Redirect to={`/${urlSplit[urlSplit.length - 2]}/${roomID}/${roomID.charAt(0)}`}/>);
-    }
-    return props.children;
-}
-
 class App extends PureComponent {
     componentDidMount() {
         document.title = 'Ultimate Tic-Tac-Toe';
@@ -230,16 +221,8 @@ class App extends PureComponent {
             <Switch>
                 <Route exact path="/" component={MainMenu}/>
                 <Route exact path="/matchmaking" component={Matchmaking}/>
-                <Route path="/tournament/:roomID">
-                    <PlayContainer>
-                        <Tournament/>
-                    </PlayContainer>
-                </Route>
-                <Route path="/play/:roomID">
-                    <PlayContainer>
-                        <Online/>
-                    </PlayContainer>
-                </Route>
+                <Route exact path="/tournament/:roomID" component={Tournament} />
+                <Route exact path="/play/:roomID" component={Online} />
                 <Route exact path="/play/" component={Online}/>
                 <Route exact path="/playoffline/" component={Offline}/>
                 <Route exact path="/stats" component={PlayerStats}/>

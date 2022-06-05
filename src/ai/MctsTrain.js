@@ -23,7 +23,7 @@ function getNullIndices(arr) {
 export function getPossibleMoves(boards, nextIndex, wonBoards) {
     let possibleNextIndices = [];
     if(!wonBoards[nextIndex]) possibleNextIndices.push(nextIndex);
-    if(nextIndex === null) {
+    if(nextIndex === -1) {
         possibleNextIndices = getNullIndices(wonBoards);
     }
     const moves = []
@@ -87,7 +87,7 @@ function scoreHeuristics(node, botsTurn, move, nextIndex, potentialBoardWin) {
     if(globalSetupScore > 0) score += getSignedScore(globalSetupScore, !botsTurn);
     const setupScore = getMoveSetupScore(node.boards[move[0]], node.botAvatar, move[1], h.moveSetup);
     if(setupScore > 0) score += getSignedScore(setupScore, !botsTurn);
-    if(nextIndex === null) score += getSignedScore(h.freeChoice, !botsTurn);
+    if(nextIndex === -1) score += getSignedScore(h.freeChoice, !botsTurn);
     if(potentialBoardWin) score += getSignedScore(getBoardWinScore(move[0]), botsTurn);
     if(move[0] === 4) score += getSignedScore(h.middleBoardPlay, botsTurn);
     if(move[1] === 4) score += getSignedScore(h.middlePlay, botsTurn);
@@ -115,7 +115,7 @@ export function simulate(node) {
         const board = boards[move[0]];
         board[move[1]] = avatar;
         nextIndex = move[1];
-        if(wonBoards[nextIndex]) nextIndex = null;
+        if(wonBoards[nextIndex]) nextIndex = -1;
         const potentialWin = winChecks.calculateWinner(wonBoards)
         const score = getScore(node, boards, wonBoards, botsTurn, move, nextIndex);
         node.backPropogate(score*h.simulateFactor);
