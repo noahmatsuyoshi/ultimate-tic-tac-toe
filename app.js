@@ -58,7 +58,7 @@ io.on("connection", async (socket) => {
     const token = globalConstants.sanitize(clientCookie.playerToken);
     await dynamoHelper.getUser(token);
     let { roomID, tournament, matchmaking } = socket.handshake.query;
-    if(roomID) {
+    if(roomID && roomID !== "undefined") {
         if(isNaN(parseInt(roomID.charAt(0)))) return;
         roomID = globalConstants.sanitize(roomID).toLowerCase();
         const instanceIndex = parseInt(roomID.charAt(0));
@@ -66,7 +66,7 @@ io.on("connection", async (socket) => {
             await dynamoHelper.initializeRoomsForTournaments(instanceIndex, id2manager);
         }
     }
-    let roomType = "";
+    let roomType = "b";
     if((roomID !== 'undefined') && (roomID in id2manager)) {
         roomType = id2manager[roomID].type;
     } else if(tournament) {
@@ -98,10 +98,12 @@ io.on("connection", async (socket) => {
         if(matchmaking) {
             matchmakingManager.removeToken(token);
         } else {
-            const activeTokens = id2manager[roomID].activeTokens;
-            activeTokens.delete(token);
-            socket.leave(roomID);
-            if (activeTokens.size === 0) startTimer(socket, id2manager[roomID], id2manager);
+            if(roomID in id2manager) {
+                const activeTokens = id2manager[roomID].activeTokens;
+                activeTokens.delete(token);
+                socket.leave(roomID);
+                if (activeTokens.size === 0) startTimer(socket, id2manager[roomID], id2manager);
+            }
         }
     });
 });
