@@ -2,7 +2,7 @@ version: 0.2
 phases:
   build:
     commands:
-      - npm install
+      - npm install --save
       - npm run build
       - npm install pm2 -g
 artifacts:
