@@ -91,12 +91,15 @@ class RoomManager extends Manager {
     }
 
     addToken(token, socket) {
-        if(this.playerTokens.hasKey(token)) return;
-        if(this.playerTokens.keys.length >= 2) {
+        if(this.activeTokens.has(token)) return;
+        if(this.activeTokens.size >= 2) {
             console.log("Room full: " + this.playerTokens.keys);
             socket.emit(globalConstants.eventTypes.ERROR_EVENT, {errorMessage: globalConstants.errorMessages.ROOM_FULL});
         } else {
-            this.playerTokens.set(token, "");
+            this.activeTokens.add(token);
+            if(!this.playerTokens.hasKey(token)) {
+                this.playerTokens.set(token, "");
+            }
             if(this.playerTokens.keys.length === 2) {
                 this.forceAllClientsUpdate();
             }

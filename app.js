@@ -4,6 +4,7 @@ const cookie = require('cookie');
 const globalConstants = require('./server/constants');
 const express = require('express');
 const app = express();
+const bcrypt = require('bcrypt');
 const http = require('http').Server(app);
 const io = require('socket.io')(http, {
     cors: {
@@ -17,6 +18,11 @@ const {registerTournamentManager} = require('./server/tournamentHandler');
 const {startTimer} = require('./server/registerHandlers');
 const Matchmaking = require('./server/matchmaking');
 const DynamoHelper = require('./server/dynamoHelper');
+const jwt = require('jsonwebtoken');
+
+const id2manager = {};
+const dynamoHelper = new DynamoHelper();
+const matchmakingManager = new Matchmaking(id2manager, dynamoHelper);
 
 const generateUID = () => {
     let firstPart = (Math.random() * 46656) | 0;
@@ -27,6 +33,7 @@ const generateUID = () => {
 }
 
 app.use(cookieParser());
+app.use(express.json());
 app.use((req, res, next) => {
     if(req.cookies.playerToken === undefined) {
         res.cookie('playerToken', generateUID());
@@ -35,28 +42,103 @@ app.use((req, res, next) => {
     }
     next();
 })
-app.get('/stats/getStats', async function(req, res) {
+
+// verify jwt token
+app.use((req, res, next) => {
+    console.log(req.cookies);
+    if(('accessToken' in req.cookies) && req.cookies.accessToken) {
+        jwt.verify(req.cookies.accessToken, process.env.API_SECRET, function (err, decode) {
+            if (err) res.cookie('username', undefined);
+            else res.cookie('username', decode.id);
+            next();
+        });
+    } else {
+        res.cookie('username', undefined);
+        next();
+    }
+});
+
+app.get('/getStats', async function(req, res) {
     console.log("http req made");
-    const token = req.cookies.playerToken;
+    let token = req.cookies.playerToken;
+    if(('username' in req.cookies) && (req.cookies.username !== ""))
+        token = req.cookies.username;
     const user = await dynamoHelper.getUser(token);
     console.log(user);
     res.json({stats: user});
 })
+
+app.post('/login', async function(req, res) {
+    if(!req.body.username || !req.body.password) return;
+    const username = globalConstants.sanitize(req.body.username);
+    const password = globalConstants.sanitize(req.body.password);
+    console.log("http req made");
+    let user = await dynamoHelper.getUser(req.body.username);
+    if(!user.password) {
+        await dynamoHelper.setPassword(username, password);
+        user = await dynamoHelper.getUser(req.body.username);
+    }
+    const passwordIsValid = bcrypt.compareSync(
+        req.body.password,
+        user.password
+    );
+    // checking if password was valid and send response accordingly
+    if (!passwordIsValid) {
+        res.cookie("loginError", "Invalid password or username taken");
+        return res.status(400)
+            .send({
+                accessToken: null,
+                message: "Invalid password or username taken"
+            });
+    }
+    //signing token with user id
+    const token = jwt.sign({
+        id: user.token
+    }, process.env.API_SECRET, {
+        expiresIn: 86400
+    });
+
+    res.cookie("loginError", "");
+    res.cookie("accessToken", token);
+    res.cookie("username", user.token);
+
+    //responding to client request with user profile success message and  access token .
+    res.status(200)
+        .send({
+            message: "Login successful"
+        });
+});
+
+// verify jwt token
+io.use((socket, next) => {
+    const cookies = cookie.parse(socket.handshake.headers.cookie);
+    console.log(cookies);
+    if(('accessToken' in cookies) && cookies.accessToken) {
+        jwt.verify(cookies.accessToken, process.env.API_SECRET, function (err, decode) {
+            if (err) socket.username = undefined;
+            else socket.username = decode.id;
+            next();
+        });
+    } else {
+        socket.username = undefined;
+        next();
+    }
+});
+
 app.use(express.static(path.join(__dirname, "build")));
 app.use((req, res, next) => {
     res.sendFile(path.join(__dirname, 'build', 'index.html'));
 })
 
-const id2manager = {};
-const dynamoHelper = new DynamoHelper();
-const matchmakingManager = new Matchmaking(id2manager, dynamoHelper);
-
 io.on("connection", async (socket) => {
     console.log("connection");
     const clientCookie = cookie.parse(socket.request.headers.cookie);
     if(!clientCookie.playerToken) return;
-    const token = globalConstants.sanitize(clientCookie.playerToken);
-    await dynamoHelper.getUser(token);
+    let token = globalConstants.sanitize(clientCookie.playerToken);
+    if(('username' in socket) && (socket.username))
+        token = socket.username
+    const user = await dynamoHelper.getUser(token);
+
     let { roomID, tournament, matchmaking } = socket.handshake.query;
     if(roomID && roomID !== "undefined") {
         if(isNaN(parseInt(roomID.charAt(0)))) return;
@@ -91,8 +173,6 @@ io.on("connection", async (socket) => {
             }
             id2manager[roomID] = await registerRoomManager(id2manager, socket, token, roomID, dynamoHelper);
         }
-        if(roomID !== 'undefined')
-            id2manager[roomID].activeTokens.add(token);
     }
 
     socket.on("disconnect", () => {

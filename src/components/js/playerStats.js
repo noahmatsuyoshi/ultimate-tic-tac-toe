@@ -1,4 +1,4 @@
-import {convertCamelCaseToUpper, getPlayerToken} from '../../js/constants'
+import {convertCamelCaseToUpper, getPlayerToken, getToken, getUsername} from '../../js/constants'
 import {useState, useEffect} from "react";
 import '../css/playerStats.css';
 import {sleep} from '../../js/constants';
@@ -8,11 +8,10 @@ const playerStatsList = ["gamesWon", "gamesLost", "bestTournamentPlacement", "to
 export default function PlayerStats(props) {
     const [stats, setStats] = useState(false);
     useEffect(async () => {
-        const token = getPlayerToken();
+        const token = getToken();
         if(!stats || (Object.keys(stats).length === 0))
             await getUserStats(token, setStats);
     })
-
     if(!stats) return (<div className="main-container stats-text"></div>)
     else return (<div className="main-container stats-text">
         {stats.map(t => <div className="stats-text">{t[0]}: {t[1]}</div>)}
@@ -24,9 +23,18 @@ async function refreshStats(token, setStats) {
     await getUserStats(token, setStats);
 }
 
-async function getUserStats(token, setStats) {
-    console.log(`${window.location.href}getStats`);
-    fetch(`${window.location.href}getStats`)
+export async function getXP(token, setXP) {
+    fetch("/getStats")
+        .then(res => {console.log(res); return res;})
+        .then(res => res.json())
+        .then(async res => {
+            setXP(res.stats.xp);
+        });
+}
+
+export async function getUserStats(token, setStats) {
+    fetch("/getStats")
+        .then(res => {console.log(res); return res;})
         .then(res => res.json())
         .then(async res => {
             const stats = res.stats;
@@ -42,5 +50,4 @@ async function getUserStats(token, setStats) {
             })
             setStats(newData);
         });
-
 }

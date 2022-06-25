@@ -2,13 +2,21 @@ import ReactDOM from 'react-dom';
 import {Link, BrowserRouter, Switch, Route, Redirect, useParams} from 'react-router-dom';
 import {ConnectionHandler, OfflineGame} from './js/game';
 import Matchmaking from './components/js/matchmaking';
-import {PureComponent, React, useState} from 'react';
+import ExperienceBar from './components/js/experienceBar';
+import {PureComponent, React, useState, useEffect} from 'react';
 import Tournament from './components/js/tournament';
-import PlayerStats from "./components/js/playerStats";
+import PlayerStats, {getXP} from "./components/js/playerStats";
 import * as globalConstants from './js/constants';
 import './css/index.css';
+import {getToken} from "./js/constants";
 
 function MainMenu(props) {
+    const [xp, setXP] = useState(null);
+    useEffect(async () => {
+        const token = getToken();
+        if((token !== null) && !xp)
+            await getXP(token, setXP);
+    })
     return (
         <div className="main-menu">
             <div className="game">
@@ -26,13 +34,16 @@ function MainMenu(props) {
                     <div className="menu-row">
                         <OfflineOption/>
                         <ProjectInfo/>
-                        <FinalOption/>
+                        <ProfileOption/>
                     </div>
                 </div>
-                <div className="bottom-container">
-                    <PlayerStatsOption/>
-                </div>
-
+                {xp !== null ?
+                    <div className="bottom-container">
+                        <ExperienceBar xp={xp}/>
+                        {<PlayerStatsOption/>}
+                    </div> :
+                    <div />
+                }
             </div>
         </div>
     );
@@ -178,9 +189,53 @@ function ProjectInfo(props) {
     )
 }
 
-function FinalOption(props) {
+function ProfileOption(props) {
+    const login = (username, password) => {
+        fetch("/login", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({username: username, password: password})
+        })
+            .then(res => res.json())
+            .then(async res => {
+                console.log(res)
+                if(res.status !== 200) {
+                    console.log(res);
+                    throw res;
+                }
+            })
+            .catch(error => {
+                console.log(`Error: ${error}`);
+            });
+    }
+
+    return (
+        <Login login={login} />
+    )
+}
+
+function Login(props) {
+    const [username, setUsername] = useState("")
+    const [password, setPassword] = useState("")
+
     return (
         <div className='menu-cell menu-cell-last'>
+            <form onSubmit={() => props.login(username, password)} className='vertical-list'>
+                <label className='vertical-list-child'>
+                    <input className='vertical-list-child input-field' type='text'
+                           value={username} onChange={(e) => setUsername(e.target.value)}
+                           placeholder='username'/>
+                    <input className='vertical-list-child input-field' type='text'
+                          value={password} onChange={(e) => setPassword(e.target.value)}
+                          placeholder='password'/>
+                </label>
+                <button className='menu-button join-tournament' onClick={() => props.login(username, password)}>
+                    Login/Register
+                </button>
+                <div className="text-error">{globalConstants.getLoginError()}</div>
+            </form>
         </div>
     )
 }
@@ -203,8 +258,8 @@ function Offline(props) {
 
 function PlayerStatsOption() {
     return (
-        <Link to={`/stats/`} className="link">
-            <button className="menu-button find-room">
+        <Link to={`/stats/`} className="player-stats-button-container link">
+            <button className="player-stats-button find-room">
                 Player Stats
             </button>
         </Link>
@@ -217,6 +272,8 @@ class App extends PureComponent {
     }
 
     render() {
+        const url = window.location.href;
+        if(url.endsWith("?")) window.location.replace(url.substring(0, url.length - 2));
         return (
             <Switch>
                 <Route exact path="/" component={MainMenu}/>
@@ -225,7 +282,7 @@ class App extends PureComponent {
                 <Route exact path="/play/:roomID" component={Online} />
                 <Route exact path="/play/" component={Online}/>
                 <Route exact path="/playoffline/" component={Offline}/>
-                <Route exact path="/stats" component={PlayerStats}/>
+                <Route exact path="/stats/" component={PlayerStats}/>
             </Switch>
         );
     }

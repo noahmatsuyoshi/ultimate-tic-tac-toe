@@ -257,7 +257,7 @@ const validation = {
                 return true;
             },
         }
-    },
+    }
 }
 module.exports.validation = validation;
 
