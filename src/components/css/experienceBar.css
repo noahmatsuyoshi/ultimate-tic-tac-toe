@@ -1,0 +1,28 @@
+.experience-bar {
+    flex: 0.8;
+    display: flex;
+    flex-direction: row;
+    border: black 2px solid;
+    height: fit-content;
+    text-align: right;
+    vertical-align: center;
+    font-size: 3vmin;
+    border-radius: 5px;
+    align-items: center;
+}
+
+.experience-fill {
+    background-color: deepskyblue;
+    display: block;
+    color: black;
+    height: 4vmin;
+    justify-self: left;
+}
+
+.level-text-container {
+    color: black;
+    height: 4vmin;
+    position: relative;
+    width: 20vmin;
+    right: 1%;
+}

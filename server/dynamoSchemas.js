@@ -47,6 +47,10 @@ const userSchemaJSON = {
         dynamoAttrType: "S",
         type: "string",
     },
+    password: {
+        dynamoAttrType: "S",
+        type: "string",
+    },
     lastModified: {
         dynamoAttrType: "N",
         type: "int",

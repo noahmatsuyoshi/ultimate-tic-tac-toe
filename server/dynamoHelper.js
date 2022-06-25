@@ -2,6 +2,7 @@ const AWS = require("aws-sdk");
 const { dynamodbTableInfo, TwoWayMap } = require('./constants');
 const schemas = require('./dynamoSchemas');
 const { TournamentManager } = require('./tournamentHandler');
+const bcrypt = require('bcrypt');
 
 if(process.env.NODE_ENV == 'development') {
     AWS.config.update({
@@ -168,7 +169,7 @@ class DynamoHelper {
 
             if (putIfNotExists && (response.Item === undefined)) {
                 await this.putNewItem(idObj, tableName);
-                await this.setField(idObj, tableName, "dateCreated", Date.now().toString());
+                await this.setFields(idObj, tableName, {"dateCreated": Date.now().toString()});
                 return await this.getItem(idObj, tableName, jsonSchema, insertMissingFields);
             }
 
@@ -219,12 +220,17 @@ class DynamoHelper {
     }
 
     appendLastModifiedToParams(params) {
-        const fieldsBeingModified = Object.values(params.ExpressionAttributeNames);
-        for(let f of fieldsBeingModified) {
-            if(f === "lastModified") return;
-        }
-        params.ExpressionAttributeNames["#FL"] = "lastModified";
-        params.ExpressionAttributeValues[":vL"] = {S: Date.now().toString()};
+        params.ExpressionAttributeNames[`#FL`] = "lastModified";
+        params.ExpressionAttributeValues[`:vL`] = {S: Date.now().toString()};
+    }
+
+    // assumes user exists
+    async setPassword(username, password) {
+        const setFields = this.setFields.bind(this);
+        await bcrypt.hash(password, 10, async function(err, hash) {
+            if(err) throw err;
+            await setFields({token: {S: username}}, 'ultimatetictactoe.users', {'password': hash});
+        });
     }
 
     async setFields(idObj, tableName, field_dict) {
@@ -244,8 +250,11 @@ class DynamoHelper {
             updateExpressions.push(`#F${i} = :v${i}`);
             i++;
         }
-        this.appendLastModifiedToParams(params);
-        params.UpdateExpression = `SET #FL = :vL`
+
+        if(!('lastModified' in field_dict)) {
+            this.appendLastModifiedToParams(params);
+            params.UpdateExpression = "SET #FL = :vL";
+        }
         if(updateExpressions.length > 0) params.UpdateExpression += `, ${updateExpressions.join(", ")}`
         await this.dynamodb.updateItem(
             params, (err, data) =>

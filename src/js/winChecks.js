@@ -2,7 +2,7 @@ export const getWonBoards = (boards) => {
     const wonBoards = Array(9).fill(null);
     for (let i = 0; i < boards.length; i++) {
         const board = boards[i].slice();
-        const winner = calculateWinner(board);
+        const [winner, _] = calculateWinner(board);
         if (winner) {
             wonBoards[i] = winner;
         }
@@ -10,6 +10,7 @@ export const getWonBoards = (boards) => {
     return wonBoards;
 }
 
+// return [winnerAvatar, winnerArray]
 export const calculateWinner = (board) => {
     const lines = [
         [0, 1, 2],
@@ -24,10 +25,10 @@ export const calculateWinner = (board) => {
     for (let i = 0; i < lines.length; i++) {
         const [a, b, c] = lines[i];
         if (board[a] && board[a] === board[b] && board[a] === board[c] && board[a] !== 'T') {
-            return board[a];
+            return [board[a], [a, b, c]]
         }
     }
-    return null;
+    return [null, null];
 }
 
 export const calculateTie = (boards, wonBoards) => {

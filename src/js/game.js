@@ -184,8 +184,8 @@ function GameContainer(props) {
   let winner;
   if(props.winner) winner = props.winner;
   else {
-    const winnerArray = calculateWinner(props.gameData.wonBoards);
-    winner = winnerArray ? props.gameData.wonBoards[winnerArray[0]] : null;
+    const [winner_temp, _] = calculateWinner(props.gameData.wonBoards);
+    winner = winner_temp;
     console.log(calculateTie(props.gameData.boards, props.gameData.wonBoards));
     
     if((!winner && !props.gameData.wonBoards.includes(null)) || 
@@ -213,7 +213,7 @@ function GameContainer(props) {
 class Game extends PureComponent {
   updateWonBoards(gameData, gameIndex) {
     const board = gameData.boards[gameIndex];
-    const boardWinner = calculateWinner(board);
+    const [boardWinner, _] = calculateWinner(board);
     if(boardWinner !== null) {
       gameData.wonBoards[gameIndex] = board[boardWinner[0]];
     } else if(!board.includes(null)) {
@@ -251,7 +251,7 @@ class Game extends PureComponent {
   }
 
   render() {
-    const gameWinner = calculateWinner(this.props.gameData.wonBoards);
+    const [gameWinner, gameWinnerArray] = calculateWinner(this.props.gameData.wonBoards);
     let boards = [];
     for (let i = 0; i < 3; i++) {
       let row = [];
@@ -264,7 +264,7 @@ class Game extends PureComponent {
         if(winner) {
           let isGameWinningBoard = false;
           if(gameWinner) {
-            isGameWinningBoard = gameWinner.includes(index);
+            isGameWinningBoard = gameWinnerArray.includes(index);
           }
           
           cell = (

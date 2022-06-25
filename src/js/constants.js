@@ -1,3 +1,5 @@
+import cookie from "cookie";
+
 export const SOCKET_SERVER_URI = "";
 
 export const botParameters = Object.freeze({
@@ -87,11 +89,15 @@ export function generateUID() {
     return instanceIndex + firstPart + secondPart;
 }
 
-const playerTokenKeyString = 'playerToken=';
-export function getPlayerToken() {
-    const cookie = decodeURIComponent(document.cookie);
-    console.log(cookie);
-    const i = cookie.indexOf(playerTokenKeyString);
-    const startI = i + playerTokenKeyString.length;
-    return cookie.substring(startI, startI + 6);
+export function getToken() {
+    const cookies = cookie.parse(document.cookie);
+    if(('username' in cookies) && (cookies.username !== "")) return cookies.username;
+    if(('playerToken' in cookies) && (cookies.playerToken !== "")) return cookies.playerToken;
+    return null;
+}
+
+export function getLoginError() {
+    const cookies = cookie.parse(document.cookie);
+    if('loginError' in cookies) return cookies.loginError;
+    return "";
 }
