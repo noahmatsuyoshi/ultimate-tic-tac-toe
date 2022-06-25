@@ -3,6 +3,7 @@ phases:
   build:
     commands:
       - npm install --save
+      - npm install bcrypt
       - npm run build
       - npm install pm2 -g
 artifacts:
