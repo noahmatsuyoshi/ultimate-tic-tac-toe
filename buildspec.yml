@@ -2,10 +2,10 @@ version: 0.2
 phases:
   build:
     commands:
+      - npm install -g node-gyp
       - npm install bcrypt
       - npm install --save
       - npm run build
-      - npm install pm2 -g
 artifacts:
   files:
     - '**/*'
