@@ -1,11 +1,18 @@
 version: 0.2
 phases:
+  pre_build:
+    commands:
+      - echo Installing source NPM dependencies...
+      - npm install -g node-gyp
+      - npm install --save
   build:
     commands:
-      - npm install -g node-gyp
-      - npm install bcrypt
-      - npm install --save
+      - echo Build started on `date`
+      - echo Compiling the Node.js code
       - npm run build
+  post_build:
+    commands:
+      - echo Build completed on `date`
 artifacts:
   files:
     - '**/*'
