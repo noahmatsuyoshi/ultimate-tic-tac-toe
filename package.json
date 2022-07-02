@@ -13,7 +13,6 @@
     "@testing-library/react": "^11.2.2",
     "@testing-library/user-event": "^12.6.0",
     "aws-sdk": "^2.1120.0",
-    "bcryptjs": "*",
     "cookie": "^0.5.0",
     "cookie-parser": "^1.4.5",
     "express": "^4.17.1",

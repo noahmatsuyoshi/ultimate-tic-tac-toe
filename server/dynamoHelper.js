@@ -1,8 +1,7 @@
 const AWS = require("aws-sdk");
-const { dynamodbTableInfo, TwoWayMap } = require('./constants');
+const { dynamodbTableInfo, TwoWayMap, salt } = require('./constants');
 const schemas = require('./dynamoSchemas');
 const { TournamentManager } = require('./tournamentHandler');
-const bcrypt = require('bcrypt');
 
 if(process.env.NODE_ENV == 'development') {
     AWS.config.update({
@@ -227,10 +226,8 @@ class DynamoHelper {
     // assumes user exists
     async setPassword(username, password) {
         const setFields = this.setFields.bind(this);
-        await bcrypt.hash(password, 10, async function(err, hash) {
-            if(err) throw err;
-            await setFields({token: {S: username}}, 'ultimatetictactoe.users', {'password': hash});
-        });
+        const hash = salt(password);
+        await setFields({token: {S: username}}, 'ultimatetictactoe.users', {'password': hash});
     }
 
     async setFields(idObj, tableName, field_dict) {

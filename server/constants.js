@@ -1,3 +1,5 @@
+const crypto = require('crypto');
+
 const miscParameters = Object.freeze({
     SOCKET_SERVER_HOST: "0.0.0.0",
     SOCKET_SERVER_PORT: "80",
@@ -287,3 +289,6 @@ const sanitize = function sanitize(str){
     return str.trim();
 }
 module.exports.sanitize = sanitize;
+
+module.exports.salt = strToSalt => crypto.pbkdf2Sync(strToSalt, process.env.API_SECRET,
+    1, 64, `sha512`).toString(`hex`);

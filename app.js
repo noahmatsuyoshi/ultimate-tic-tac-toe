@@ -4,7 +4,6 @@ const cookie = require('cookie');
 const globalConstants = require('./server/constants');
 const express = require('express');
 const app = express();
-const bcrypt = require('bcrypt');
 const http = require('http').Server(app);
 const io = require('socket.io')(http, {
     cors: {
@@ -78,12 +77,10 @@ app.post('/login', async function(req, res) {
         await dynamoHelper.setPassword(username, password);
         user = await dynamoHelper.getUser(req.body.username);
     }
-    const passwordIsValid = bcrypt.compareSync(
-        req.body.password,
-        user.password
-    );
+    const reqHash = globalConstants.salt(req.body.password);
+    const trueHash = user.password;
     // checking if password was valid and send response accordingly
-    if (!passwordIsValid) {
+    if (reqHash !== trueHash) {
         res.cookie("loginError", "Invalid password or username taken");
         return res.status(400)
             .send({
@@ -93,14 +90,14 @@ app.post('/login', async function(req, res) {
     }
     //signing token with user id
     const token = jwt.sign({
-        id: user.token
+        id: user.username
     }, process.env.API_SECRET, {
         expiresIn: 86400
     });
 
     res.cookie("loginError", "");
     res.cookie("accessToken", token);
-    res.cookie("username", user.token);
+    res.cookie("username", user.username);
 
     //responding to client request with user profile success message and  access token .
     res.status(200)
