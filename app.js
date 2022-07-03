@@ -85,7 +85,7 @@ app.post('/login', async function(req, res) {
     const password = globalConstants.sanitize(req.body.password);
     console.log("http req made");
     let user = await dynamoHelper.getUser(req.body.username);
-    if(!user.password) {
+    if(!('password' in user) && !user.password) {
         await dynamoHelper.setPassword(username, password);
         user = await dynamoHelper.getUser(req.body.username);
     }
