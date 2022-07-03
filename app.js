@@ -71,7 +71,7 @@ app.get('/getStats', async function(req, res) {
     if(('accessToken' in req.cookies) && req.cookies.accessToken) {
         jwt.verify(req.cookies.accessToken, process.env.API_SECRET, function (err, decode) {
             if (err) res.cookie('username', undefined);
-            else token = decode.id
+            else if(decode.id !== undefined) token = decode.id
         });
     }
     const user = await dynamoHelper.getUser(token);
