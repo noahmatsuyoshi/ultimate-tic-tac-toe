@@ -52,7 +52,8 @@ app.use((req, res, next) => {
 // verify jwt token
 app.use((req, res, next) => {
     console.log(req.cookies);
-    if(('accessToken' in req.cookies) && req.cookies.accessToken) {
+    if(('accessToken' in req.cookies) && req.cookies.accessToken !== "undefined" && req.cookies.accessToken !== "" &&
+        'username' in req.cookies && req.cookies.username !== "" && req.cookies.username !== "undefined") {
         jwt.verify(req.cookies.accessToken, process.env.API_SECRET, function (err, decode) {
             if (err) res.cookie('username', undefined);
             else res.cookie('username', decode.id);
