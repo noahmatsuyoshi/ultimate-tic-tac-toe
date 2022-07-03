@@ -90,14 +90,14 @@ app.post('/login', async function(req, res) {
     }
     //signing token with user id
     const token = jwt.sign({
-        id: user.username
+        id: user.token
     }, process.env.API_SECRET, {
         expiresIn: 86400
     });
 
     res.cookie("loginError", "");
     res.cookie("accessToken", token);
-    res.cookie("username", user.username);
+    res.cookie("username", user.token);
 
     //responding to client request with user profile success message and  access token .
     res.status(200)

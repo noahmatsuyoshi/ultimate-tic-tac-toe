@@ -9,6 +9,7 @@ import PlayerStats, {getXP} from "./components/js/playerStats";
 import * as globalConstants from './js/constants';
 import './css/index.css';
 import {getToken} from "./js/constants";
+import Cookies from 'universal-cookie';
 
 function MainMenu(props) {
     const [xp, setXP] = useState(null);
@@ -222,6 +223,18 @@ function Login(props) {
 
     return (
         <div className='menu-cell menu-cell-last'>
+            {globalConstants.isLoggedIn() ?
+            <div className='vertical-list'>
+                <div className='vertical-list-child'>
+                    {globalConstants.getToken()}
+                </div>
+                <div className='vertical-list-child'>
+                    <AvatarOption />
+                </div>
+                <div className='vertical-list-child'>
+                    <LogoutOption />
+                </div>
+            </div> :
             <form onSubmit={() => props.login(username, password)} className='vertical-list'>
                 <label className='vertical-list-child'>
                     <input className='vertical-list-child input-field' type='text'
@@ -235,9 +248,39 @@ function Login(props) {
                     Login/Register
                 </button>
                 <div className="text-error">{globalConstants.getLoginError()}</div>
-            </form>
+            </form>}
         </div>
     )
+}
+
+function AvatarOption(props) {
+    return (
+        <Link to={`/avatar/`} className="link">
+            <button className="menu-button choose-avatar">
+                Choose Avatar
+            </button>
+        </Link>
+    );
+}
+
+function LogoutOption(props) {
+    return (
+        <Link to={`/logout/`} className="link">
+            <button className="menu-button logout">
+                Logout
+            </button>
+        </Link>
+    );
+}
+
+function PlayerStatsOption() {
+    return (
+        <Link to={`/stats/`} className="player-stats-button-container link">
+            <button className="player-stats-button find-room">
+                Player Stats
+            </button>
+        </Link>
+    );
 }
 
 function Online(props) {
@@ -256,13 +299,12 @@ function Offline(props) {
     );
 }
 
-function PlayerStatsOption() {
+function Logout(props) {
+    const cookies = new Cookies();
+    cookies.set('username', "")
+    cookies.set('accessToken', "")
     return (
-        <Link to={`/stats/`} className="player-stats-button-container link">
-            <button className="player-stats-button find-room">
-                Player Stats
-            </button>
-        </Link>
+        <Redirect to="" />
     );
 }
 
@@ -282,6 +324,8 @@ class App extends PureComponent {
                 <Route exact path="/play/:roomID" component={Online} />
                 <Route exact path="/play/" component={Online}/>
                 <Route exact path="/playoffline/" component={Offline}/>
+                <Route exact path="/avatar/" component={Avatar}/>
+                <Route exact path="/logout/" component={Logout}/>
                 <Route exact path="/stats/" component={PlayerStats}/>
             </Switch>
         );

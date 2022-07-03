@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "engines": {
-    "node": "16.14.2"
+    "node": "16.15.1"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.58.0",
@@ -27,6 +27,7 @@
     "socket.io-client": "^3.0.4",
     "socket.io-redis": "^6.1.1",
     "unique-names-generator": "^4.4.0",
+    "universal-cookie": "^4.0.4",
     "web-vitals": "^0.2.4"
   },
   "scripts": {

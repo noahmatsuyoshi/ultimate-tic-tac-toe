@@ -79,6 +79,14 @@ html, body, #reactapp, .App, #app {
     background-color: #fa23d7;
 }
 
+.choose-avatar {
+    background-color: #0bc100;
+}
+
+.logout {
+    background-color: #ff0000;
+}
+
 .vertical-list {
     display: flex;
     flex-direction: column;
