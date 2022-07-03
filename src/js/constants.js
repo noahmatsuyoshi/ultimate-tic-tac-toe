@@ -89,9 +89,14 @@ export function generateUID() {
     return instanceIndex + firstPart + secondPart;
 }
 
+export function isLoggedIn() {
+    const cookies = cookie.parse(document.cookie);
+    return ('username' in cookies) && (cookies.username !== "") && (cookies.username !== "undefined");
+}
+
 export function getToken() {
     const cookies = cookie.parse(document.cookie);
-    if(('username' in cookies) && (cookies.username !== "")) return cookies.username;
+    if(('username' in cookies) && (cookies.username !== "") && (cookies.username !== "undefined")) return cookies.username;
     if(('playerToken' in cookies) && (cookies.playerToken !== "")) return cookies.playerToken;
     return null;
 }
