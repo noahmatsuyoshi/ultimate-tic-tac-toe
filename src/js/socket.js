@@ -84,7 +84,7 @@ export const useSocketTournament = (roomID, updateClient, errorCallback) => {
     return { changeMyName, start, shuffle, changeSettings, kickPlayer }
 };
 
-export const useSocket = (roomID, setGameData, setAvatar, setTourData, setSpectator, setSwitchTourney, setRps) => {
+export const useSocket = (roomID, setGameData, setAvatar, setAvatarImage, setTourData, setSpectator, setSwitchTourney, setRps) => {
     const socketRef = useRef();
 
     const sendNewMove = (gameIndex, boardIndex) => {

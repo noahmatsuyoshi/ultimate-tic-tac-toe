@@ -138,6 +138,7 @@ function OnlineGame(props) {
     wonBoards: null,
     nextIndex: -1,
     allowRestart: false,
+    avatarToImage: {},
   });
   const [avatar, setAvatar] = useState("");
   const [spectator, setSpectator] = useState(false);
@@ -278,7 +279,7 @@ class Game extends PureComponent {
         } else {
           cell = (
             <Board 
-              squares={board}
+              squares={board} avatarToImage={this.props.gameData.avatarToImage}
               onClick={(i) => this.handleClick(index, i)}
               backgroundColor={this.props.gameData.nextIndex === index ? 'yellow' : 'white'}
             />
@@ -304,9 +305,10 @@ class Game extends PureComponent {
 class Board extends PureComponent {
 
   renderSquare(i) {
+    const avatar = this.props.squares[i];
     return (
       <Square 
-        value={this.props.squares[i]} 
+        value={avatar && avatar in this.props.avatarToImage ? this.props.avatarToImage[avatar] : avatar}
         onClick={() => this.props.onClick(i)}
         key={i}
         backgroundColor={this.props.backgroundColor}

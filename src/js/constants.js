@@ -17,6 +17,7 @@ export const eventTypes = Object.freeze({
     FORCE_CLIENT_UPDATE_EVENT: "forceClientUpdate",
     RESTART_GAME_EVENT: "restartGame",
     SET_AVATAR_EVENT: "setAvatar",
+    SET_AVATAR_IMAGE_EVENT: "setAvatarImage",
     PLAYER_NAME_CHANGE_EVENT: "playerNameChange",
     CHANGE_NAME_EVENT: "changeName",
     START_EVENT: "start",
@@ -105,4 +106,28 @@ export function getLoginError() {
     const cookies = cookie.parse(document.cookie);
     if('loginError' in cookies) return cookies.loginError;
     return "";
+}
+
+export function dataURLToBlob(dataURL) {
+    const BASE64_MARKER = ';base64,';
+    if (dataURL.indexOf(BASE64_MARKER) == -1) {
+        const parts = dataURL.split(',');
+        const contentType = parts[0].split(':')[1];
+        const raw = parts[1];
+
+        return new Blob([raw], {type: contentType});
+    }
+
+    const parts = dataURL.split(BASE64_MARKER);
+    const contentType = parts[0].split(':')[1];
+    const raw = window.atob(parts[1]);
+    const rawLength = raw.length;
+
+    const uInt8Array = new Uint8Array(rawLength);
+
+    for (let i = 0; i < rawLength; ++i) {
+        uInt8Array[i] = raw.charCodeAt(i);
+    }
+
+    return new Blob([uInt8Array], {type: contentType});
 }

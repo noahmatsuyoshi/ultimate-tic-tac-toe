@@ -259,6 +259,14 @@ class DynamoHelper {
         ).promise();
     }
 
+    async updateUser(id, field_dict) {
+        await this.setFields({
+            "userID": {
+                S: id
+            },
+        }, "ultimatetictactoe.users", field_dict);
+    }
+
     async updateGame(id, field_dict) {
         await this.setFields({
             "roomID": {

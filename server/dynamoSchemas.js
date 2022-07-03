@@ -3,7 +3,7 @@ module.exports.json = {};
 // all schemas: [name, dynamo_type, js_type]
 
 const gameSchemaJSON = {
-    id: {
+    roomID: {
         dynamoAttrType: "S",
         type: "string",
     },
@@ -12,8 +12,8 @@ const gameSchemaJSON = {
         type: "int",
     },
     dateCreated: {
-        dynamoAttrType: "N",
-        type: "int",
+        dynamoAttrType: "M",
+        type: "map",
     },
     firstPlayer: {
         dynamoAttrType: "S",
@@ -30,6 +30,10 @@ const gameSchemaJSON = {
     playerTokens: {
         dynamoAttrType: "S",
         type: "twoWayMap",
+    },
+    avatarToImage: {
+        dynamoAttrType: "S",
+        type: "json",
     },
     boards: {
         dynamoAttrType: "S",
@@ -54,6 +58,10 @@ const userSchemaJSON = {
     lastModified: {
         dynamoAttrType: "N",
         type: "int",
+    },
+    avatarBase64: {
+        dynamoAttrType: "S",
+        type: "string",
     },
     dateCreated: {
         dynamoAttrType: "N",
@@ -87,7 +95,7 @@ const userSchemaJSON = {
 module.exports.json.userSchema = userSchemaJSON;
 
 const tourSchemaJSON = {
-    id: {
+    tourID: {
         dynamoAttrType: "S",
         type: "string",
     },

@@ -68,10 +68,12 @@ class RoomManager extends Manager {
         if(tourData) this.tourData = tourData;
         this.type = 'r';
         this.dynamoHelper = dynamoHelper;
+        this.tokenToImage = {};
         this.rpsMoves = null;
         this.rpsWinnerToken = null;
         this.playerTokens = new globalConstants.TwoWayMap();
         this.playerTokens.set(token1, "");
+        this.avatarToImage = {};
         this.firstPlayer = token1;
         this.room = new Room(this);
         if(oldState) {
@@ -179,6 +181,7 @@ class RoomManager extends Manager {
     getClientData(token) {
         const data = {};
         data.avatar = this.isTokenRegistered(token) ? this.playerTokens.get(token) : "";
+        data.avatarToImage = this.avatarToImage;
         data.firstPlayer = this.firstPlayer === token;
         if(this.rpsMoves)  {
             this.fillRPSData(data, token)
@@ -196,7 +199,14 @@ class RoomManager extends Manager {
         const otherToken = tokens[0];
         this.playerTokens.set(token, data.avatar);
         this.playerTokens.set(otherToken, data.avatar === "X" ? "O" : "X");
-        this.dynamoHelper.updateGame(this.id, {"playerTokens": JSON.stringify(this.playerTokens.map)});
+        this.avatarToImage = {
+            [data.avatar]: this.tokenToImage[token],
+            [this.playerTokens.get(otherToken)]: this.tokenToImage[otherToken]
+        }
+        this.dynamoHelper.updateGame(this.id, {
+            "playerTokens": JSON.stringify(this.playerTokens.map),
+            "avatarToImage": JSON.stringify(this.avatarToImage),
+        });
     }
 
     startRps() {
@@ -313,6 +323,10 @@ module.exports.registerRoomManager = async (id2manager, socket, token, id, dynam
     else manager = id2manager[id];
     await initHandler(manager, socket, id, token, RoomHandler);
     manager.addToken(token, socket);
+    const user = await dynamoHelper.getUser(token);
+    if(('avatarBase64' in user) && (user.avatarBase64 !== "")) {
+        manager.tokenToImage[token] = user.avatarBase64;
+    }
     manager.initRoom();
     manager.forceAllClientsUpdate();
     console.log('room connection made, roomID: ' + id + ', token: ' + token);
