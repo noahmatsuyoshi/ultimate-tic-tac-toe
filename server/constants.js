@@ -97,6 +97,7 @@ const eventTypes = Object.freeze({
     UPDATE_EVENT: "update",
     RESTART_GAME_EVENT: "restartGame",
     SET_AVATAR_EVENT: "setAvatar",
+    SET_AVATAR_IMAGE_EVENT: "setAvatarImage",
     PLAYER_NAME_CHANGE_EVENT: "playerNameChange",
     FORCE_CLIENT_UPDATE_EVENT: "forceClientUpdate",
     CHANGE_NAME_EVENT: "changeName",

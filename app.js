@@ -1,9 +1,14 @@
+const os = require('os')
 const path = require('path');
 const cookieParser = require('cookie-parser')
+const bodyParser = require('body-parser')
 const cookie = require('cookie');
+const multer = require('multer');
+const upload = multer({ dest: os.tmpdir() });
 const globalConstants = require('./server/constants');
 const express = require('express');
 const app = express();
+const router = express.Router();
 const http = require('http').Server(app);
 const io = require('socket.io')(http, {
     cors: {
@@ -32,7 +37,9 @@ const generateUID = () => {
 }
 
 app.use(cookieParser());
-app.use(express.json());
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded());
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use((req, res, next) => {
     if(req.cookies.playerToken === undefined) {
         res.cookie('playerToken', generateUID());
@@ -59,9 +66,14 @@ app.use((req, res, next) => {
 
 app.get('/getStats', async function(req, res) {
     console.log("http req made");
+
     let token = req.cookies.playerToken;
-    if(('username' in req.cookies) && (req.cookies.username !== ""))
-        token = req.cookies.username;
+    if(('accessToken' in req.cookies) && req.cookies.accessToken) {
+        jwt.verify(req.cookies.accessToken, process.env.API_SECRET, function (err, decode) {
+            if (err) res.cookie('username', undefined);
+            else token = decode.id
+        });
+    }
     const user = await dynamoHelper.getUser(token);
     console.log(user);
     res.json({stats: user});
@@ -100,9 +112,35 @@ app.post('/login', async function(req, res) {
     res.cookie("username", user.token);
 
     //responding to client request with user profile success message and  access token .
+    res.status(200).send({
+            message: "Login successful"
+        });
+});
+
+app.post('/setAvatar', async function(req, res) {
+    let [image, username] = [null, null];
+    if(('accessToken' in req.cookies) && req.cookies.accessToken) {
+        jwt.verify(req.cookies.accessToken, process.env.API_SECRET, function (err, decode) {
+            if (err) {
+                res.cookie('username', undefined);
+                res.status(401)
+                    .send({
+                        message: "Re-login needed"
+                    });
+            }
+            else {
+                image = req.body.base64;
+                username = req.cookies.username;
+            };
+        });
+    }
+    if(image) {
+        await dynamoHelper.updateUser(username, {"avatarBase64": image})
+    }
+
     res.status(200)
         .send({
-            message: "Login successful"
+            message: "Avatar change successful"
         });
 });
 
@@ -134,7 +172,6 @@ io.on("connection", async (socket) => {
     let token = globalConstants.sanitize(clientCookie.playerToken);
     if(('username' in socket) && (socket.username))
         token = socket.username
-    const user = await dynamoHelper.getUser(token);
 
     let { roomID, tournament, matchmaking } = socket.handshake.query;
     if(roomID && roomID !== "undefined") {

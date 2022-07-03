@@ -199,8 +199,7 @@ function ProfileOption(props) {
             },
             body: JSON.stringify({username: username, password: password})
         })
-            .then(res => res.json())
-            .then(async res => {
+            .then(res => {
                 console.log(res)
                 if(res.status !== 200) {
                     console.log(res);
@@ -298,6 +297,77 @@ function Offline(props) {
         </div>
     );
 }
+
+function setAvatar(base64str) {
+    console.log(base64str);
+    fetch(
+        "/setAvatar",
+        {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({'base64': base64str}),
+        }
+    )
+        .then((response) => response.json())
+        .then((result) => {
+            console.log('Success:', result);
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+        });
+}
+
+function resizeImage(file, fileReader) {
+    if(file.type.match(/image.*/)) {
+        console.log('An image has been loaded');
+        fileReader.readAsDataURL(file);
+    }
+}
+
+function Avatar(props) {
+    const [image, setImage] = useState(null);
+    const [fileReader, setFileReader] = useState(null);
+
+    useEffect(() => {
+        const reader = new FileReader();
+        reader.onload = function (readerEvent) {
+            readerEvent.preventDefault();
+            const image = new Image();
+            image.onload = function (imageEvent) {
+                imageEvent.preventDefault();
+                const canvas = document.createElement('canvas')
+                canvas.width = 128;
+                canvas.height = 128;
+                canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
+                const dataUrl = canvas.toDataURL('image/jpeg');
+                setAvatar(dataUrl);
+            }
+            image.src = readerEvent.target.result;
+        }
+        if(!fileReader)
+            setFileReader(reader);
+    })
+
+    return (
+        <div className='main-menu'>
+            <form onSubmit={(e) => {
+                e.preventDefault();
+                resizeImage(image, fileReader);
+                return false;
+            }} >
+                <input type='file' onChange={event => {
+                    setImage(event.target.files[0]);
+                }} /> <br />
+                <button type='submit'>
+                    Upload Image
+                </button>
+            </form>
+        </div>
+    );
+}
+
 
 function Logout(props) {
     const cookies = new Cookies();
