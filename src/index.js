@@ -205,6 +205,7 @@ function ProfileOption(props) {
                     console.log(res);
                     throw res;
                 }
+                window.location.reload();
             })
             .catch(error => {
                 console.log(`Error: ${error}`);
