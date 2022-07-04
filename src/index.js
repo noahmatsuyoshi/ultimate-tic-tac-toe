@@ -282,7 +282,7 @@ function AvatarOption(props) {
 
     return (<form>
         <label className="menu-button choose-avatar">
-            Choose Avatar
+            Upload Avatar
             <input type="file" style={{display: "none"}}
                onChange={event => {
                    event.preventDefault();
