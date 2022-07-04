@@ -15,7 +15,7 @@ function MainMenu(props) {
     const [xp, setXP] = useState(null);
     useEffect(async () => {
         const token = getToken();
-        if((token !== null) && !xp)
+        if ((token !== null) && !xp)
             await getXP(token, setXP);
     })
     return (
@@ -43,7 +43,7 @@ function MainMenu(props) {
                         <ExperienceBar xp={xp}/>
                         {<PlayerStatsOption/>}
                     </div> :
-                    <div />
+                    <div/>
                 }
             </div>
         </div>
@@ -201,7 +201,7 @@ function ProfileOption(props) {
         })
             .then(res => {
                 console.log(res)
-                if(res.status !== 200) {
+                if (res.status !== 200) {
                     console.log(res);
                     throw res;
                 }
@@ -213,54 +213,83 @@ function ProfileOption(props) {
     }
 
     return (
-        <Login login={login} />
+        <Login login={login}/>
     )
 }
 
 function Login(props) {
-    const [username, setUsername] = useState("")
-    const [password, setPassword] = useState("")
+    const [username, setUsername] = useState("");
+    const [password, setPassword] = useState("");
+    const [avatarImage, setAvatarImage] = useState(null);
 
     return (
         <div className='menu-cell menu-cell-last'>
             {globalConstants.isLoggedIn() ?
-            <div className='vertical-list'>
-                <div className='vertical-list-child'>
-                    {globalConstants.getToken()}
-                </div>
-                <div className='vertical-list-child'>
-                    <AvatarOption />
-                </div>
-                <div className='vertical-list-child'>
-                    <LogoutOption />
-                </div>
-            </div> :
-            <form onSubmit={() => props.login(username, password)} className='vertical-list'>
-                <label className='vertical-list-child'>
-                    <input className='vertical-list-child input-field' type='text'
-                           value={username} onChange={(e) => setUsername(e.target.value)}
-                           placeholder='username'/>
-                    <input className='vertical-list-child input-field' type='text'
-                          value={password} onChange={(e) => setPassword(e.target.value)}
-                          placeholder='password'/>
-                </label>
-                <button className='menu-button join-tournament' onClick={() => props.login(username, password)}>
-                    Login/Register
-                </button>
-                <div className="text-error">{globalConstants.getLoginError()}</div>
-            </form>}
+                <div className='vertical-list'>
+                    <div className='vertical-list-child'>
+                        {avatarImage !== null ? <img src={avatarImage}/> : globalConstants.getToken()}
+                    </div>
+                    <div className='vertical-list-child'>
+                        <AvatarOption setAvatarImage={setAvatarImage}/>
+                    </div>
+                    <div className='vertical-list-child'>
+                        {avatarImage !== null ? <SubmitAvatarOption submitAvatar={() => {
+                            setAvatar(avatarImage);
+                            setAvatarImage(null);
+                        }}/> : <LogoutOption/>}
+                    </div>
+                </div> :
+                <form onSubmit={() => props.login(username, password)} className='vertical-list'>
+                    <label className='vertical-list-child'>
+                        <input className='vertical-list-child input-field' type='text'
+                               value={username} onChange={(e) => setUsername(e.target.value)}
+                               placeholder='username'/>
+                        <input className='vertical-list-child input-field' type='text'
+                               value={password} onChange={(e) => setPassword(e.target.value)}
+                               placeholder='password'/>
+                    </label>
+                    <button className='menu-button join-tournament' onClick={() => props.login(username, password)}>
+                        Login/Register
+                    </button>
+                    <div className="text-error">{globalConstants.getLoginError()}</div>
+                </form>}
         </div>
     )
 }
 
 function AvatarOption(props) {
-    return (
-        <Link to={`/avatar/`} className="link">
-            <button className="menu-button choose-avatar">
-                Choose Avatar
-            </button>
-        </Link>
-    );
+    const [fileReader, setFileReader] = useState(null);
+
+    useEffect(() => {
+        const reader = new FileReader();
+        reader.onload = function (readerEvent) {
+            readerEvent.preventDefault();
+            const image = new Image();
+            image.onload = function (imageEvent) {
+                imageEvent.preventDefault();
+                const canvas = document.createElement('canvas')
+                canvas.width = 128;
+                canvas.height = 128;
+                canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
+                const dataUrl = canvas.toDataURL('image/jpeg');
+                props.setAvatarImage(dataUrl);
+            }
+            image.src = readerEvent.target.result;
+        }
+        if (!fileReader)
+            setFileReader(reader);
+    })
+
+    return (<form>
+        <label className="menu-button choose-avatar">
+            Upload Avatar
+            <input type="file" style={{display: "none"}}
+               onChange={event => {
+                   event.preventDefault();
+                   resizeImage(event.target.files[0], fileReader);
+               }}/>
+        </label>
+    </form>);
 }
 
 function LogoutOption(props) {
@@ -270,6 +299,14 @@ function LogoutOption(props) {
                 Logout
             </button>
         </Link>
+    );
+}
+
+function SubmitAvatarOption(props) {
+    return (
+        <button className="menu-button create-room" onClick={props.submitAvatar}>
+            Submit
+        </button>
     );
 }
 
@@ -321,52 +358,10 @@ function setAvatar(base64str) {
 }
 
 function resizeImage(file, fileReader) {
-    if(file.type.match(/image.*/)) {
+    if (file.type.match(/image.*/)) {
         console.log('An image has been loaded');
         fileReader.readAsDataURL(file);
     }
-}
-
-function Avatar(props) {
-    const [image, setImage] = useState(null);
-    const [fileReader, setFileReader] = useState(null);
-
-    useEffect(() => {
-        const reader = new FileReader();
-        reader.onload = function (readerEvent) {
-            readerEvent.preventDefault();
-            const image = new Image();
-            image.onload = function (imageEvent) {
-                imageEvent.preventDefault();
-                const canvas = document.createElement('canvas')
-                canvas.width = 128;
-                canvas.height = 128;
-                canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
-                const dataUrl = canvas.toDataURL('image/jpeg');
-                setAvatar(dataUrl);
-            }
-            image.src = readerEvent.target.result;
-        }
-        if(!fileReader)
-            setFileReader(reader);
-    })
-
-    return (
-        <div className='main-menu'>
-            <form onSubmit={(e) => {
-                e.preventDefault();
-                resizeImage(image, fileReader);
-                return false;
-            }} >
-                <input type='file' onChange={event => {
-                    setImage(event.target.files[0]);
-                }} /> <br />
-                <button type='submit'>
-                    Upload Image
-                </button>
-            </form>
-        </div>
-    );
 }
 
 
@@ -375,7 +370,7 @@ function Logout(props) {
     cookies.set('username', "")
     cookies.set('accessToken', "")
     return (
-        <Redirect to="" />
+        <Redirect to=""/>
     );
 }
 
@@ -386,16 +381,15 @@ class App extends PureComponent {
 
     render() {
         const url = window.location.href;
-        if(url.endsWith("?")) window.location.replace(url.substring(0, url.length - 2));
+        if (url.endsWith("?")) window.location.replace(url.substring(0, url.length - 2));
         return (
             <Switch>
                 <Route exact path="/" component={MainMenu}/>
                 <Route exact path="/matchmaking" component={Matchmaking}/>
-                <Route exact path="/tournament/:roomID" component={Tournament} />
-                <Route exact path="/play/:roomID" component={Online} />
+                <Route exact path="/tournament/:roomID" component={Tournament}/>
+                <Route exact path="/play/:roomID" component={Online}/>
                 <Route exact path="/play/" component={Online}/>
                 <Route exact path="/playoffline/" component={Offline}/>
-                <Route exact path="/avatar/" component={Avatar}/>
                 <Route exact path="/logout/" component={Logout}/>
                 <Route exact path="/stats/" component={PlayerStats}/>
             </Switch>

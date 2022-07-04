@@ -273,7 +273,9 @@ class Game extends PureComponent {
               className="square-big" 
               style={{backgroundColor: isGameWinningBoard ? 'green' : 'white'}}
             >
-              {winner}
+              {('avatarToImage' in this.props.gameData) && winner && (winner in this.props.gameData.avatarToImage) ?
+                  <img src={this.props.gameData.avatarToImage[winner]} className="avatar"/> :
+                  winner}
             </div>
           );
         } else {
@@ -342,7 +344,7 @@ function Square(props) {
         onClick={props.onClick}
         style={{backgroundColor: props.backgroundColor}}
     >
-      {props.value}
+      {props.value !== null && props.value.length > 1 ? <img src={props.value} className="avatar"/> : props.value}
     </button>
   );
 }
