@@ -1,14 +1,10 @@
-const os = require('os')
 const path = require('path');
 const cookieParser = require('cookie-parser')
 const bodyParser = require('body-parser')
 const cookie = require('cookie');
-const multer = require('multer');
-const upload = multer({ dest: os.tmpdir() });
 const globalConstants = require('./server/constants');
 const express = require('express');
 const app = express();
-const router = express.Router();
 const http = require('http').Server(app);
 const io = require('socket.io')(http, {
     cors: {
@@ -171,7 +167,7 @@ io.on("connection", async (socket) => {
     const clientCookie = cookie.parse(socket.request.headers.cookie);
     if(!clientCookie.playerToken) return;
     let token = globalConstants.sanitize(clientCookie.playerToken);
-    if(('username' in socket) && (socket.username))
+    if(('username' in socket) && (socket.username) && (socket.username !== 'undefined'))
         token = socket.username
 
     let { roomID, tournament, matchmaking } = socket.handshake.query;
