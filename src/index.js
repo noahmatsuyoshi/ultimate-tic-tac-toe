@@ -227,7 +227,7 @@ function Login(props) {
             {globalConstants.isLoggedIn() ?
                 <div className='vertical-list'>
                     <div className='vertical-list-child'>
-                        {avatarImage !== null ? <img src={avatarImage}/> : globalConstants.getToken()}
+                        {avatarImage !== null ? <img src={avatarImage} className="avatar-img"/> : globalConstants.getToken()}
                     </div>
                     <div className='vertical-list-child'>
                         <AvatarOption setAvatarImage={setAvatarImage}/>
