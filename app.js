@@ -80,13 +80,13 @@ app.post('/login', async function(req, res) {
     if(!req.body.username || !req.body.password) return;
     const username = globalConstants.sanitize(req.body.username);
     const password = globalConstants.sanitize(req.body.password);
-    console.log("http req made");
-    let user = await dynamoHelper.getUser(req.body.username);
+    console.log(`login req made, ${username}`);
+    let user = await dynamoHelper.getUser(username);
     if(!('password' in user) || (!user.password || (user.password === ""))) {
         await dynamoHelper.setPassword(username, password);
-        user = await dynamoHelper.getUser(req.body.username);
+        user = await dynamoHelper.getUser(username);
     }
-    const reqHash = globalConstants.salt(req.body.password);
+    const reqHash = globalConstants.salt(password);
     const trueHash = user.password;
     // checking if password was valid and send response accordingly
     if (reqHash !== trueHash) {
