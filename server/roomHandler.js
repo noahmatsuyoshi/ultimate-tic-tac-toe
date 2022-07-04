@@ -78,7 +78,7 @@ class RoomManager extends Manager {
         this.room = new Room(this);
         if(oldState) {
             for(let k in oldState) {
-                if(['rpsMoves', 'playerTokens', 'firstPlayer'].includes(k)) {
+                if(['rpsMoves', 'playerTokens', 'avatarToImage', 'firstPlayer'].includes(k)) {
                     this[k] = oldState[k];
                 } else {
                     this.room[k] = oldState[k];

@@ -261,7 +261,7 @@ class DynamoHelper {
 
     async updateUser(id, field_dict) {
         await this.setFields({
-            "userID": {
+            "token": {
                 S: id
             },
         }, "ultimatetictactoe.users", field_dict);
