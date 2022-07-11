@@ -108,16 +108,11 @@ app.post('/login', async function(req, res) {
 app.get('/getStats', async function(req, res, next) {
     console.log("http req made");
 
-    let token = req.cookies.playerToken;
-    try {
-        const decode = jwt.verify(req.cookies.accessToken, process.env.API_SECRET);
-        token = decode.id;
+    await jwt.verify(req.cookies.accessToken, process.env.API_SECRET, async function(err, decode) {
+        const token = err ? req.cookies.playerToken : decode.id;
         const user = await dynamoHelper.getUser(token);
         res.json({stats: user});
-    } catch (e) {
-        next(e);
-    }
-
+    });
 });
 
 app.post('/setRPS', async function(req, res) {
