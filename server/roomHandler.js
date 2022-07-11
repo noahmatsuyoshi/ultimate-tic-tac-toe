@@ -38,7 +38,11 @@ class RoomHandler extends SocketHandler {
         this.socket.on(globalConstants.eventTypes.RESTART_GAME_EVENT, () => {
             if(!this.manager.isTokenRegistered(this.token)) return;
             if(!this.manager.isGameOver()) return;
-            this.manager.resetGame();
+            if(this.manager.rpsFromStart) {
+                this.manager.rpsMoves = {};
+                this.manager.rpsWinnerToken = "";
+            } else
+                this.manager.resetGame();
             this.manager.forceAllClientsUpdate();
         });
     }
@@ -63,13 +67,15 @@ class RoomHandler extends SocketHandler {
 }
 
 class RoomManager extends Manager {
-    constructor(id, dynamoHelper, token1, tourData=null, oldState=null) {
+    constructor(id, dynamoHelper, token1, tourData=null, oldState=null, rps=null) {
         super(id);
         if(tourData) this.tourData = tourData;
         this.type = 'r';
         this.dynamoHelper = dynamoHelper;
         this.tokenToImage = {};
         this.rpsMoves = null;
+        if(rps) this.rpsMoves = {};
+        this.rpsFromStart = rps;
         this.rpsWinnerToken = null;
         this.playerTokens = new globalConstants.TwoWayMap();
         this.playerTokens.set(token1, "");
@@ -78,7 +84,7 @@ class RoomManager extends Manager {
         this.room = new Room(this);
         if(oldState) {
             for(let k in oldState) {
-                if(['rpsMoves', 'playerTokens', 'avatarToImage', 'firstPlayer'].includes(k)) {
+                if(['rpsFromStart', 'rpsMoves', 'playerTokens', 'avatarToImage', 'firstPlayer'].includes(k)) {
                     this[k] = oldState[k];
                 } else {
                     this.room[k] = oldState[k];
@@ -89,6 +95,7 @@ class RoomManager extends Manager {
                 "firstPlayer": this.firstPlayer,
                 "dateCreated": Date.now().toString(),
             });
+            if(rps) this.dynamoHelper.updateGame(id, {"rpsFromStart": rps});
         }
     }
 
@@ -103,6 +110,13 @@ class RoomManager extends Manager {
                 this.playerTokens.set(token, "");
             }
             if(this.playerTokens.keys.length === 2) {
+                if(this.rpsMoves) {
+                    if (this.playerTokens.values.every(v => v === "")) {
+                        const [k1, k2] = this.playerTokens.keys;
+                        this.playerTokens.set(k1, "X");
+                        this.playerTokens.set(k2, "O");
+                    }
+                }
                 this.forceAllClientsUpdate();
             }
             this.dynamoHelper.updateGame(this.id, {"playerTokens": JSON.stringify(this.playerTokens.map)});
@@ -115,6 +129,10 @@ class RoomManager extends Manager {
     }
 
     isGameOver() {
+        if(this.rpsFromStart) {
+            const values = Object.values(this.rpsMoves);
+            return (values.length === 2) && (values.every(v => v !== ""));
+        }
         const winner = this.calculateWinner(this.room.wonBoards);
         if(winner) {
             this.dynamoHelper.updateGame(this.id, {
@@ -230,11 +248,13 @@ class RoomManager extends Manager {
         else [winnerToken, loserToken] = [rpsTokens[1], rpsTokens[0]];
         if(winnerToken) {
             this.rpsWinnerToken = winnerToken;
-            this.dynamoHelper.updateGame(this.id, {"rpsMove": JSON.stringify(this.rpsMoves)})
-            this.dynamoHelper.winGame(winnerToken, loserToken);
+            this.dynamoHelper.updateGame(this.id, {"rpsMoves": JSON.stringify(this.rpsMoves)})
+            if(!this.rpsFromStart)
+                this.dynamoHelper.winGame(winnerToken, loserToken);
             if('tourData' in this) {
                 this.tourWin(winnerToken);
             }
+            this.forceAllClientsUpdate();
         }
     }
 
@@ -314,11 +334,11 @@ class Room {
     }
 }
 
-module.exports.registerRoomManager = async (id2manager, socket, token, id, dynamoHelper) => {
+module.exports.registerRoomManager = async (id2manager, socket, token, id, dynamoHelper, rps=null) => {
     let manager;
     if (!(id in id2manager)) {
         const gameData = await dynamoHelper.getGame(id);
-        manager = new RoomManager(id, dynamoHelper, token, null, gameData);
+        manager = new RoomManager(id, dynamoHelper, token, null, gameData, rps);
     }
     else manager = id2manager[id];
     await initHandler(manager, socket, id, token, RoomHandler);

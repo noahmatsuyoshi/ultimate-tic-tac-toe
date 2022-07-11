@@ -246,16 +246,38 @@ ol, ul {
 }
 
 .player-stats-button-container {
-    flex: 0.2;
-    height: 6vmin;
+    flex: 0.3;
+    height: 4vmin;
+}
+
+.exp-bar-player-stats-container {
+    flex: 0.8;
+    display: flex;
+    flex-direction: row;
 }
 
 .player-stats-button {
-    height: fit-content;
+    height: 4vmin;
     width: fit-content;
     font-size: 3vmin;
     border-radius: 5px;
     vertical-align: center;
+}
+
+.rps-option {
+    display: flex;
+    flex-direction: row;
+    flex: 0.2;
+    text-align: right;
+    justify-content: center;
+    vertical-align: middle;
+    line-height: 4vmin;
+    font-size: 2vmin;
+}
+
+.rps-checkbox {
+    height: 3vmin;
+    width: 3vmin;
 }
 
 .form {

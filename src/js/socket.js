@@ -8,7 +8,7 @@ export const useSocketMatchmaking = (matchFoundCallback, setWaitTime) => {
     useEffect(() => {
         if (!socketRef.current) {
             socketRef.current = socketIOClient(globalConstants.SOCKET_SERVER_URI, {
-                query: { matchmaking: true },
+                query: { matchmaking: true, rps: globalConstants.getRPSCookie() },
                 transports: ['websocket', 'polling']
             });
         }
@@ -33,7 +33,7 @@ export const useSocketTournament = (roomID, updateClient, errorCallback) => {
         let firstConnect = false;
         if (!socketRef.current) {
             socketRef.current = socketIOClient(globalConstants.SOCKET_SERVER_URI, {
-                query: { roomID, tournament: true },
+                query: { roomID, tournament: true, rps: globalConstants.getRPSCookie() },
                 transports: ['websocket', 'polling'],
                 path: `/socket.io/${roomID.charAt(0)}/`,
             });
@@ -84,7 +84,7 @@ export const useSocketTournament = (roomID, updateClient, errorCallback) => {
     return { changeMyName, start, shuffle, changeSettings, kickPlayer }
 };
 
-export const useSocket = (roomID, setGameData, setAvatar, setAvatarImage, setTourData, setSpectator, setSwitchTourney, setRps) => {
+export const useSocket = (roomID, setGameData, setAvatar, setTourData, setSpectator, setSwitchTourney, setRps) => {
     const socketRef = useRef();
 
     const sendNewMove = (gameIndex, boardIndex) => {
@@ -108,7 +108,6 @@ export const useSocket = (roomID, setGameData, setAvatar, setAvatarImage, setTou
     }
 
     const restartGame = () => {
-        setSocketAvatar("");
         socketRef.current.emit(globalConstants.eventTypes.RESTART_GAME_EVENT);
     };
 
@@ -125,7 +124,7 @@ export const useSocket = (roomID, setGameData, setAvatar, setAvatarImage, setTou
         let firstConnect = false;
         if (!socketRef.current) {
             socketRef.current = socketIOClient(globalConstants.SOCKET_SERVER_URI, {
-                query: { roomID },
+                query: { roomID, rps: globalConstants.getRPSCookie() },
                 transports: ['websocket', 'polling'],
                 path: roomID ? `/socket.io/${roomID.charAt(0)}/` : '/socket.io',
             });

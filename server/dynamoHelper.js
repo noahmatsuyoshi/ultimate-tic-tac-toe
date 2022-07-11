@@ -150,43 +150,47 @@ class DynamoHelper {
         return data;
     }
 
-    async getItem(idObj, tableName, jsonSchema, insertMissingFields=false, putIfNotExists=false) {
+    get(idObj, tableName) {
         const params = {
             Key: idObj,
             TableName: tableName
         };
-        try {
-            const response = await this.dynamodb.getItem(params, (err, data) => {
-                if (err) {
-                    console.error(`failed to getItem from ${tableName}`, JSON.stringify(err, null, 2));
-                } else {
-                    if (!this.checkError(err, data)) {
-                        return data;
-                    }
+        return this.dynamodb.getItem(params, (err, data) => {
+            if (err) {
+                console.error(`failed to getItem from ${tableName}`, JSON.stringify(err, null, 2));
+            } else {
+                if (!this.checkError(err, data)) {
+                    return data;
                 }
-            }).promise();
+            }
+        }).promise();
+    }
 
-            if (putIfNotExists && (response.Item === undefined)) {
+    async getItem(idObj, tableName, jsonSchema, insertMissingFields=false, putIfNotExists=false) {
+        try {
+            let user = (await this.get(idObj, tableName)).Item;
+
+            if (putIfNotExists && (user === undefined)) {
                 await this.putNewItem(idObj, tableName);
                 await this.setFields(idObj, tableName, {"dateCreated": Date.now().toString()});
-                return await this.getItem(idObj, tableName, jsonSchema, insertMissingFields);
+                user = (await this.get(idObj, tableName)).Item;
             }
 
             if(insertMissingFields) {
                 const missingFields = []
                 for(let f in jsonSchema) {
-                    if(!(f in response.Item))
+                    if(!(f in user))
                         missingFields.push(f);
                 }
                 if(missingFields.length > 0) {
                     await this.addMissingFields(idObj, tableName, missingFields, jsonSchema);
-                    return await this.getItem(idObj, tableName, jsonSchema);
+                    user = (await this.get(idObj, tableName)).Item;
                 }
             }
 
-            return this.resolveTypes(this.convertRecordToJSON(response.Item), jsonSchema);
+            return this.resolveTypes(this.convertRecordToJSON(user), jsonSchema);
         } catch (e) {
-            console.log(`failed to get user, error: ${e}`)
+            console.log(`failed to get item, error: ${e}`)
         }
     }
 
@@ -240,6 +244,7 @@ class DynamoHelper {
         const updateExpressions = [];
         let i = 0;
         for(const f in field_dict) {
+            console.log(f);
             params.ExpressionAttributeNames[`#F${i}`] = f;
             params.ExpressionAttributeValues[`:v${i}`] = {
                 [schemas.json.getSchema(tableName)[f].dynamoAttrType]: field_dict[f]

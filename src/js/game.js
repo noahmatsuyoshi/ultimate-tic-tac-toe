@@ -183,24 +183,21 @@ export function OfflineGame(props) {
 
 function GameContainer(props) {
   let winner;
-  if(props.winner) winner = props.winner;
-  else {
-    const [winner_temp, _] = calculateWinner(props.gameData.wonBoards);
-    winner = winner_temp;
-    console.log(calculateTie(props.gameData.boards, props.gameData.wonBoards));
-    
-    if((!winner && !props.gameData.wonBoards.includes(null)) || 
-      calculateTie(props.gameData.boards, props.gameData.wonBoards)) {
-        winner = 'T';
-    }
-  }
-
   if(props.rps && props.rps.on) {
     if(props.rps.tie) winner = 'T';
     else if(props.rps.winner === null) winner = false;
     else {
       props.gameData.myTurn = !props.rps.winner;
       winner = true;
+    }
+  } else {
+    const [winner_temp, _] = calculateWinner(props.gameData.wonBoards);
+    winner = winner_temp;
+    console.log(calculateTie(props.gameData.boards, props.gameData.wonBoards));
+
+    if((!winner && !props.gameData.wonBoards.includes(null)) ||
+        calculateTie(props.gameData.boards, props.gameData.wonBoards)) {
+      winner = 'T';
     }
   }
   return (

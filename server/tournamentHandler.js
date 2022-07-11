@@ -145,10 +145,11 @@ class TournamentHandler extends SocketHandler {
 }
 
 class TournamentManager extends Manager {
-    constructor(id2manager, id, firstToken, dynamoHelper, oldState=null) {
+    constructor(id2manager, id, firstToken, dynamoHelper, oldState=null, rps=null) {
         super(id);
         this.id2manager = id2manager;
         this.type = 't';
+        this.rps = rps;
         this.tokenToName = new globalConstants.TwoWayMap();
         this.firstPlayer = firstToken;
         this.dynamoHelper = dynamoHelper;
@@ -180,6 +181,8 @@ class TournamentManager extends Manager {
                 "dateCreated": Date.now().toString(),
                 "instanceIndex": id.charAt(0).toString(),
             });
+            if(rps)
+                this.dynamoHelper.updateTour(id, {"rps": rps});
         }
     }
 
@@ -291,7 +294,7 @@ class TournamentManager extends Manager {
                             })
                         })
                     }
-                    this.id2manager[roomID] = new RoomManager(roomID, this.dynamoHelper, firstToken, tourData, gameData);
+                    this.id2manager[roomID] = new RoomManager(roomID, this.dynamoHelper, firstToken, tourData, gameData, this.rps);
                 })
             }
         }
@@ -373,11 +376,11 @@ class TournamentManager extends Manager {
 }
 module.exports.TournamentManager = TournamentManager;
 
-module.exports.registerTournamentManager = async (id2manager, socket, token, id, dynamoHelper) => {
+module.exports.registerTournamentManager = async (id2manager, socket, token, id, dynamoHelper, rps=null) => {
     let manager;
     if(!(id in id2manager)) {
         const tourData = await dynamoHelper.getTour(id);
-        manager = new TournamentManager(id2manager, id, token, dynamoHelper, tourData);
+        manager = new TournamentManager(id2manager, id, token, dynamoHelper, tourData, rps);
     } else manager = id2manager[id];
     await initHandler(manager, socket, id, token, TournamentHandler);
     manager.addToken(token);
