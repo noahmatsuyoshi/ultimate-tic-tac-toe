@@ -240,6 +240,7 @@ class RoomManager extends Manager {
         if(move1 === move2) {
             this.rpsMoves = {};
             this.rpsTie = true;
+            this.forceAllClientsUpdate();
         } else if(
             (move1 === 'r' && move2 === 's') ||
             (move1 === 'p' && move2 === 'r') ||
