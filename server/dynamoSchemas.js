@@ -43,6 +43,14 @@ const gameSchemaJSON = {
         dynamoAttrType: "S",
         type: "json",
     },
+    rpsFromStart: {
+        dynamoAttrType: "BOOL",
+        type: "bool",
+    },
+    rpsMoves: {
+        dynamoAttrType: "S",
+        type: "json",
+    }
 }
 module.exports.json.gameSchema = gameSchemaJSON;
 
@@ -142,7 +150,11 @@ const tourSchemaJSON = {
     winnerToken: {
         dynamoAttrType: "S",
         type: "string",
-    }
+    },
+    rps: {
+        dynamoAttrType: "BOOL",
+        type: "bool",
+    },
 }
 module.exports.json.tourSchema = tourSchemaJSON;
 

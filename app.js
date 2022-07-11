@@ -32,18 +32,21 @@ const generateUID = () => {
     return firstPart + secondPart;
 }
 
+const cookieOptions = { maxAge: 1000*60*24, sameSite: 'strict', secure: false };
+
 app.use(cookieParser());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use((req, res, next) => {
     if(req.cookies.playerToken === undefined) {
-        res.cookie('playerToken', generateUID());
+        res.cookie('playerToken', generateUID(), cookieOptions);
+        res.cookie('accessToken', "", cookieOptions);
     } else {
         req.cookies.playerToken = String(req.cookies.playerToken);
     }
     next();
-})
+});
 
 // verify jwt token
 app.use((req, res, next) => {
@@ -51,30 +54,20 @@ app.use((req, res, next) => {
     if(('accessToken' in req.cookies) && req.cookies.accessToken !== "undefined" && req.cookies.accessToken !== "" &&
         'username' in req.cookies && req.cookies.username !== "" && req.cookies.username !== "undefined") {
         jwt.verify(req.cookies.accessToken, process.env.API_SECRET, function (err, decode) {
-            if (err) res.cookie('username', undefined);
-            else res.cookie('username', decode.id);
-            next();
+            if (err) {
+                res.cookie('accessToken', "", cookieOptions);
+                res.clearCookie('username', cookieOptions);
+            }
+            else {
+                res.cookie('username', decode.id, cookieOptions);
+            }
         });
-    } else {
-        res.cookie('username', undefined);
-        next();
+    } else if(('accessToken' in req.cookies) && req.cookies.accessToken !== "undefined" && req.cookies.accessToken !== "") {
+        res.cookie('accessToken', "", cookieOptions);
+        res.clearCookie('username', cookieOptions);
     }
+    next();
 });
-
-app.get('/getStats', async function(req, res) {
-    console.log("http req made");
-
-    let token = req.cookies.playerToken;
-    if(('accessToken' in req.cookies) && req.cookies.accessToken) {
-        jwt.verify(req.cookies.accessToken, process.env.API_SECRET, function (err, decode) {
-            if (err) res.cookie('username', undefined);
-            else if(decode.id !== undefined) token = decode.id
-        });
-    }
-    const user = await dynamoHelper.getUser(token);
-    console.log(user);
-    res.json({stats: user});
-})
 
 app.post('/login', async function(req, res) {
     if(!req.body.username || !req.body.password) return;
@@ -90,7 +83,7 @@ app.post('/login', async function(req, res) {
     const trueHash = user.password;
     // checking if password was valid and send response accordingly
     if (reqHash !== trueHash) {
-        res.cookie("loginError", "Invalid password or username taken");
+        res.cookie("loginError", "Invalid password or username taken", cookieOptions);
         return res.status(400)
             .send({
                 accessToken: null,
@@ -104,22 +97,41 @@ app.post('/login', async function(req, res) {
         expiresIn: 86400
     });
 
-    res.cookie("loginError", "");
-    res.cookie("accessToken", token);
-    res.cookie("username", user.token);
+    res.cookie("loginError", "", cookieOptions);
+    res.cookie("accessToken", token, cookieOptions);
+    res.cookie("username", user.token, cookieOptions);
 
     //responding to client request with user profile success message and  access token .
-    res.status(200).send({
-            message: "Login successful"
-        });
+    res.status(200).send();
 });
+
+app.get('/getStats', async function(req, res, next) {
+    console.log("http req made");
+
+    let token = req.cookies.playerToken;
+    try {
+        const decode = jwt.verify(req.cookies.accessToken, process.env.API_SECRET);
+        token = decode.id;
+        const user = await dynamoHelper.getUser(token);
+        res.json({stats: user});
+    } catch (e) {
+        next(e);
+    }
+
+});
+
+app.post('/setRPS', async function(req, res) {
+    if(!('rps' in req.body) && typeof req.body.rps === "boolean") return;
+    res.cookie("rps", req.body.rps.toString(), cookieOptions);
+    res.send(200);
+})
 
 app.post('/setAvatar', async function(req, res) {
     let [image, username] = [null, null];
     if(('accessToken' in req.cookies) && req.cookies.accessToken) {
         jwt.verify(req.cookies.accessToken, process.env.API_SECRET, function (err, decode) {
             if (err) {
-                res.cookie('username', undefined);
+                res.clearCookie('username', cookieOptions);
                 res.status(401)
                     .send({
                         message: "Re-login needed"
@@ -132,13 +144,12 @@ app.post('/setAvatar', async function(req, res) {
         });
     }
     if(image) {
-        await dynamoHelper.updateUser(username, {"avatarBase64": image})
+        await dynamoHelper.updateUser(username, {"avatarBase64": image});
+        res.status(200)
+            .send({
+                message: "Avatar change successful"
+            });
     }
-
-    res.status(200)
-        .send({
-            message: "Avatar change successful"
-        });
 });
 
 // verify jwt token
@@ -170,7 +181,8 @@ io.on("connection", async (socket) => {
     if(('username' in socket) && (socket.username) && (socket.username !== 'undefined'))
         token = socket.username
 
-    let { roomID, tournament, matchmaking } = socket.handshake.query;
+    let { roomID, tournament, matchmaking, rps } = socket.handshake.query;
+    rps = rps === "true";
     if(roomID && roomID !== "undefined") {
         if(isNaN(parseInt(roomID.charAt(0)))) return;
         roomID = globalConstants.sanitize(roomID).toLowerCase();
@@ -193,7 +205,7 @@ io.on("connection", async (socket) => {
 
     if(!matchmaking) {
         if (roomID !== 'undefined' && roomType === 't') {
-            id2manager[roomID] = await registerTournamentManager(id2manager, socket, token, roomID, dynamoHelper);
+            id2manager[roomID] = await registerTournamentManager(id2manager, socket, token, roomID, dynamoHelper, rps);
         } else if (roomID === 'undefined' || roomType === 'b') {
             const manager = await registerBotManager(id2manager[roomID], socket, token, roomID);
             if (roomID !== 'undefined') id2manager[roomID] = manager;
@@ -202,7 +214,7 @@ io.on("connection", async (socket) => {
                 socket.emit(globalConstants.eventTypes.SWITCH_TOURNEY_EVENT);
                 return;
             }
-            id2manager[roomID] = await registerRoomManager(id2manager, socket, token, roomID, dynamoHelper);
+            id2manager[roomID] = await registerRoomManager(id2manager, socket, token, roomID, dynamoHelper, rps);
         }
     }
 

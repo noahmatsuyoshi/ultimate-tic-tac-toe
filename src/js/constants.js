@@ -108,6 +108,22 @@ export function getLoginError() {
     return "";
 }
 
+export function getRPSCookie() {
+    const cookies = cookie.parse(document.cookie);
+    if(('rps' in cookies) && (cookies.rps !== "") && (cookies.rps !== "undefined")) return (cookies.rps === "true");
+    return false;
+}
+
+export function setRPSCookie(value) {
+    fetch("/setRPS", {
+        method: "POST",
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({rps: value})
+    }).then(res => {
+        console.log("Request complete! response:", res);
+    });
+}
+
 export function dataURLToBlob(dataURL) {
     const BASE64_MARKER = ';base64,';
     if (dataURL.indexOf(BASE64_MARKER) == -1) {

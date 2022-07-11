@@ -13,7 +13,7 @@ function Rps(props) {
     if(props.rps.move && props.rps.move !== selectedMove) setSelectedMove(props.rps.move);
     if((props.rps.move || props.rps.tie) && lockCursor) setLockCursor(false);
     return (<div className="parent-container">
-        <div className="tiebreaker">TIEBREAKER: Rock Paper Scissors</div>
+        <div className="tiebreaker">Rock Paper Scissors</div>
         <div className="rps-game">
             {[RpsChoice(props, 'r', move2imgStr['r'], selectedMove, setSelectedMove, lockCursor, setLockCursor),
               RpsChoice(props, 'p', move2imgStr['p'], selectedMove, setSelectedMove, lockCursor, setLockCursor),

@@ -12,11 +12,14 @@ import {getToken} from "./js/constants";
 import Cookies from 'universal-cookie';
 
 function MainMenu(props) {
+    const [rps, setRPS] = useState(null);
     const [xp, setXP] = useState(null);
     useEffect(async () => {
         const token = getToken();
         if ((token !== null) && !xp)
             await getXP(token, setXP);
+        if (rps === null)
+            setRPS(globalConstants.getRPSCookie());
     })
     return (
         <div className="main-menu">
@@ -38,13 +41,22 @@ function MainMenu(props) {
                         <ProfileOption/>
                     </div>
                 </div>
-                {xp !== null ?
-                    <div className="bottom-container">
-                        <ExperienceBar xp={xp}/>
-                        {<PlayerStatsOption/>}
-                    </div> :
-                    <div/>
-                }
+                <div className="bottom-container">
+                    {xp !== null ?
+                        <div className="exp-bar-player-stats-container">
+                            <ExperienceBar xp={xp}/>
+                            {<PlayerStatsOption/>}
+                        </div> : <div />
+                    }
+                    <div className="rps-option">
+                        RPS Mode? <input className="rps-checkbox" type="checkbox" checked={rps} onChange={
+                        () => {
+                                globalConstants.setRPSCookie(!rps);
+                                setRPS(!rps);
+                            }
+                        }/>
+                    </div>
+                </div>
             </div>
         </div>
     );
@@ -190,34 +202,29 @@ function ProjectInfo(props) {
     )
 }
 
-function ProfileOption(props) {
-    const login = (username, password) => {
-        fetch("/login", {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({username: username, password: password})
+function login(username, password) {
+    fetch("/login", {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({username: username, password: password})
+    })
+        .then(res => {
+            console.log(res)
+            if (res.status !== 200) {
+                console.log(res);
+                throw res;
+            }
+            window.location.reload();
         })
-            .then(res => {
-                console.log(res)
-                if (res.status !== 200) {
-                    console.log(res);
-                    throw res;
-                }
-                window.location.reload();
-            })
-            .catch(error => {
-                console.log(`Error: ${error}`);
-            });
-    }
-
-    return (
-        <Login login={login}/>
-    )
+        .catch(error => {
+            console.log(`Error: ${error}`);
+        });
 }
 
-function Login(props) {
+function ProfileOption(props) {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [avatarImage, setAvatarImage] = useState(null);
@@ -233,13 +240,18 @@ function Login(props) {
                         <AvatarOption setAvatarImage={setAvatarImage}/>
                     </div>
                     <div className='vertical-list-child'>
-                        {avatarImage !== null ? <SubmitAvatarOption submitAvatar={() => {
+                        {avatarImage !== null ? <SubmitAvatarOption submitAvatar={e => {
+                            e.preventDefault();
                             setAvatar(avatarImage);
                             setAvatarImage(null);
                         }}/> : <LogoutOption/>}
                     </div>
                 </div> :
-                <form onSubmit={() => props.login(username, password)} className='vertical-list'>
+                <form onSubmit={e => {
+                    e.preventDefault();
+                    login(username, password);
+                    return false;
+                }} className='vertical-list'>
                     <label className='vertical-list-child'>
                         <input className='vertical-list-child input-field' type='text'
                                value={username} onChange={(e) => setUsername(e.target.value)}
@@ -248,7 +260,11 @@ function Login(props) {
                                value={password} onChange={(e) => setPassword(e.target.value)}
                                placeholder='password'/>
                     </label>
-                    <button className='menu-button join-tournament' onClick={() => props.login(username, password)}>
+                    <button className='menu-button join-tournament' onClick={e => {
+                        e.preventDefault();
+                        login(username, password);
+                        return false;
+                    }}>
                         Login/Register
                     </button>
                     <div className="text-error">{globalConstants.getLoginError()}</div>
