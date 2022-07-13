@@ -256,7 +256,7 @@ function ProfileOption(props) {
                         <input className='vertical-list-child input-field' type='text'
                                value={username} onChange={(e) => setUsername(e.target.value)}
                                placeholder='username'/>
-                        <input className='vertical-list-child input-field' type='text'
+                        <input className='vertical-list-child input-field' type='password'
                                value={password} onChange={(e) => setPassword(e.target.value)}
                                placeholder='password'/>
                     </label>
