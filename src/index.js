@@ -409,7 +409,6 @@ function setAvatar(base64str) {
             body: JSON.stringify({'base64': base64str}),
         }
     )
-        .then((response) => response.json())
         .then((result) => {
             console.log('Success:', result);
         })

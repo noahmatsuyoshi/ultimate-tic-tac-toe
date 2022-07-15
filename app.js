@@ -73,10 +73,7 @@ app.post('/login', async function(req, res) {
         username: req.body.username,
         password: req.body.password,
     }, res);
-    if(userObj === null) {
-
-        return;
-    }
+    if(userObj === null) return;
 
     const username = userObj.username;
     const password = userObj.password;
@@ -134,7 +131,11 @@ app.post('/setAvatar', async function(req, res) {
                 return res.status(401).send("Re-login needed");
             }
             else {
-                image = req.body.base64;
+                const userObj = globalConstants.validate('base64', {
+                    base64: req.body.base64
+                }, res);
+                if(userObj === null) return;
+                image = userObj.base64;
                 username = req.cookies.username;
             };
         });

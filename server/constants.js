@@ -234,7 +234,7 @@ const validation = {
     tourChangeName: {
         newName: {
             type: "string",
-            length: 20,
+            maxLength: 20,
         }
     },
     tourChangeSettings: {
@@ -281,6 +281,13 @@ const validation = {
                 return v;
             }
         }
+    },
+    base64: {
+        base64: {
+            type: "string",
+            base64: true,
+            maxLength: 20000,
+        }
     }
 
 }
@@ -296,14 +303,25 @@ function _validate(checks, data, res=null) {
         if(!(k in data)) continue;
         const check = checks[k];
         let v = data[k];
-        if(typeof v === "string")
-            v = sanitize(data[k]);
+        if(typeof v === "string") {
+            if(('base64' in check) && check.base64) {
+                v = base64sanitize(data[k]);
+            } else {
+                v = sanitize(data[k]);
+            }
+        }
         if('type' in check) {
             if(typeof v !== check.type) return null;
-            if('length' in check && v.length > check.length) {
+            if('minLength' in check && v.length < check.minLength) {
                 if(res !== null)
                     res.statusMessage = `${k} must be at least ${check.length} characters long`;
                     res.status(400).send();
+                return null;
+            }
+            if('maxLength' in check && v.length > check.maxLength) {
+                if(res !== null)
+                    res.statusMessage = `${k} must be less than ${check.length} characters long`;
+                res.status(400).send();
                 return null;
             }
             if('func' in check && !check.func(v, res)) return null;
@@ -313,6 +331,11 @@ function _validate(checks, data, res=null) {
         data[k] = v;
     }
     return data;
+}
+
+const base64sanitize = function sanitize(str){
+    str = str.replace(/[^a-z0-9áéíóúñü \. ;:/,+_-]/gim,"");
+    return str.trim();
 }
 
 const sanitize = function sanitize(str){
