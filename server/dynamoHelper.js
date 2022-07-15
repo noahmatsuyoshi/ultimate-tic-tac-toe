@@ -33,20 +33,20 @@ class DynamoHelper {
     }
 
     async createTables() {
-        await this.dynamodb.listTables({}, (err, data) => {
+        await this.dynamodb.listTables({}, async (err, data) => {
             if (err) {
                 console.error("Error JSON.", JSON.stringify(err, null, 2));
             } else {
-                dynamodbTableInfo.tables.forEach((table) => {
+                for(let table of dynamodbTableInfo.tables) {
                     if (!data['TableNames'].includes(table.name)) {
-                        this.createTable(table);
+                        await this.createTable(table);
                     }
-                });
+                }
             }
         }).promise();
     }
 
-    createTable(table) {
+    async createTable(table) {
         const params = {
             TableName : table.name,
             KeySchema: Object.entries(table.keySchema).map((kv_pair) =>
@@ -67,7 +67,7 @@ class DynamoHelper {
             ),
             BillingMode: "PAY_PER_REQUEST",
         };
-        this.dynamodb.createTable(params, (err, data) => this.checkError(err, data, "failed to createTable"));
+        await this.dynamodb.createTable(params, (err, data) => this.checkError(err, data, "failed to createTable")).promise();
     }
 
     putWaitTime(waitTimeInSeconds) {
