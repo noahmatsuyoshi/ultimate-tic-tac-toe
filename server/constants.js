@@ -18,11 +18,11 @@ const dynamodbTableInfo = Object.freeze({
                 match_datetime: "HASH",
             },
             secondKeySchema: {
-                dateCreated: {match_date: "HASH", include: "ALL"},
+                dateCreated: {type: "HASH", include: "ALL"},
             },
             typeSchema: {
-                match_date: "S",
-                match_time: "S",
+                dateCreated: "N",
+                match_datetime: "S",
             },
         },
         {
