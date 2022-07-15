@@ -34,6 +34,7 @@ class BotManager extends Manager {
         if(tourData) this.tourData = tourData;
         this.type = 'b';
         this.timer = {lastTime: Date.now()};
+        this.tokenToImage = {};
     }
 
     getClientData() {
@@ -55,6 +56,7 @@ class BotManager extends Manager {
             clientData.allowRestart = true;
         }
         clientData.ai = true;
+        clientData.avatarImage = this.avatarImage;
         return clientData;
     }
 
@@ -79,10 +81,13 @@ class BotManager extends Manager {
 }
 module.exports.BotManager = BotManager;
 
-module.exports.registerBotManager = async (manager, socket, token, id, mongoHelper) => {
+module.exports.registerBotManager = async (manager, socket, token, id, dynamoHelper) => {
     id = id !== 'undefined' ? id : token;
-    if(!manager) manager = new BotManager(mongoHelper, id, token);
+    if(!manager) manager = new BotManager(id);
     await initHandler(manager, socket, id, token, BotHandler);
+    const user = await dynamoHelper.getUser(token);
+    if(('avatarBase64' in user) && (user.avatarBase64 !== ""))
+        manager.avatarImage = user.avatarBase64;
     startTimer(socket, manager);
     manager.forceAllClientsUpdate();
     console.log('bot connection made, roomID: ' + id + ', token: ' + token);

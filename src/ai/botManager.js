@@ -8,6 +8,7 @@ export class BotManager {
         this.onWin = onWin;
         this.setRps = setRps;
         this.avatar = "";
+        this.avatarToImage = {};
         this.timer = {lastTime: Date.now()};
         this.rootNode = new MctsNode();
         this.startSearch();
@@ -24,6 +25,7 @@ export class BotManager {
             boards: this.rootNode.boards,
             wonBoards: this.rootNode.wonBoards,
             nextIndex: this.rootNode.nextIndex,
+            avatarToImage: this.avatarToImage,
             allowRestart: !('tourData' in this),
         });
     }
@@ -97,6 +99,9 @@ export class BotManager {
 
     setAvatar(avatar) {
         this.avatar = avatar;
+        if('avatarImage' in this) {
+            this.avatarToImage[avatar] = this.avatarImage;
+        }
         this.rootNode = new MctsNode(avatar === "X" ? "O" : "X", avatar === "O");
         if(this.avatar === "O") this.performMove();
         this.setGameData();

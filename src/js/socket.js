@@ -142,6 +142,8 @@ export const useSocket = (roomID, setGameData, setAvatar, setTourData, setSpecta
                 setAvatar(data.avatar);
                 setGameData(data);
                 if('rps' in data) setRps(data.rps);
+            } else if('avatarImage' in data) {
+                socketRef.botManager.avatarImage = data.avatarImage;
             }
             if('tourData' in data) {
                 setTourData(data.tourData);

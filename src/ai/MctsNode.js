@@ -16,7 +16,7 @@ export class MctsNode {
         this.nextIndex = nextIndex;
         this.boards = boards;
         this.wonBoards = wonBoards;
-        this.winner = winChecks.calculateWinner(wonBoards);
+        this.winner = winChecks.calculateWinner(wonBoards)[0];
         this.botAvatar = botAvatar;
         this.playerAvatar = botAvatar === 'X' ? 'O' : 'X';
         this.botsTurn = botsTurn;
@@ -117,7 +117,7 @@ export class MctsNode {
         const board = boards[move[0]];
         board[move[1]] = avatar;
         let winner;
-        if(winner = winChecks.calculateWinner(board)) {
+        if(winner = winChecks.calculateWinner(board)[0]) {
             return winner;
         }
         return null;
