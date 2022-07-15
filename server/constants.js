@@ -15,14 +15,14 @@ const dynamodbTableInfo = Object.freeze({
         {
             name: "ultimatetictactoe.wait-time",
             keySchema: {
-                match_datetime: "HASH",
+                match_date: "HASH",
             },
             secondKeySchema: {
                 dateCreated: {type: "HASH", include: "ALL"},
             },
             typeSchema: {
                 dateCreated: "N",
-                match_datetime: "S",
+                match_date: "S",
             },
         },
         {

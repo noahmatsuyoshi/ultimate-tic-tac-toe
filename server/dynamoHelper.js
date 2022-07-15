@@ -2,6 +2,7 @@ const AWS = require("aws-sdk");
 const { dynamodbTableInfo, TwoWayMap, salt } = require('./constants');
 const schemas = require('./dynamoSchemas');
 const { TournamentManager } = require('./tournamentHandler');
+const { sleep } = require('./constants');
 
 if(process.env.NODE_ENV == 'development') {
     AWS.config.update({
