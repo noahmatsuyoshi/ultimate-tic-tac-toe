@@ -10,10 +10,12 @@ import * as globalConstants from './js/constants';
 import './css/index.css';
 import {getToken} from "./js/constants";
 import Cookies from 'universal-cookie';
+import useAnalyticsEventTracker from './js/analyticsHelper';
 
 function MainMenu(props) {
     const [rps, setRPS] = useState(null);
     const [xp, setXP] = useState(null);
+    const eventTracker = useAnalyticsEventTracker('mainMenu');
     useEffect(async () => {
         const token = getToken();
         if ((token !== null) && !xp)
@@ -26,19 +28,19 @@ function MainMenu(props) {
             <div className="game">
                 <div className="game-board">
                     <div className="menu-row">
-                        <FindRoomOption/>
-                        <CreateRoomOption/>
-                        <JoinRoomOption/>
+                        <FindRoomOption eventTracker={eventTracker}/>
+                        <CreateRoomOption eventTracker={eventTracker}/>
+                        <JoinRoomOption eventTracker={eventTracker}/>
                     </div>
                     <div className="menu-row">
-                        <BotOption/>
-                        <CreateTournamentOption/>
-                        <JoinTournamentOption/>
+                        <BotOption eventTracker={eventTracker}/>
+                        <CreateTournamentOption eventTracker={eventTracker}/>
+                        <JoinTournamentOption eventTracker={eventTracker}/>
                     </div>
                     <div className="menu-row">
-                        <OfflineOption/>
-                        <ProjectInfo/>
-                        <ProfileOption/>
+                        <OfflineOption eventTracker={eventTracker}/>
+                        <ProjectInfo eventTracker={eventTracker}/>
+                        <ProfileOption eventTracker={eventTracker}/>
                     </div>
                 </div>
                 <div className="bottom-container">
@@ -65,7 +67,9 @@ function MainMenu(props) {
 function FindRoomOption(props) {
     return (
         <Link to={`/matchmaking/`} className="link">
-            <button className="menu-cell menu-cell-first find-room">
+            <button className="menu-cell menu-cell-first find-room" onClick={() => {
+                props.eventTracker('findRoom', 'click');
+            }}>
                 Find Random Opponent
             </button>
         </Link>
@@ -76,7 +80,9 @@ function CreateRoomOption(props) {
     const roomID = globalConstants.generateUID();
     return (
         <Link to={`/play/${roomID}`} className="link">
-            <button className='menu-cell menu-cell-middle create-room'>
+            <button className='menu-cell menu-cell-middle create-room' onClick={() => {
+                props.eventTracker('createRoom', 'click');
+            }}>
                 Play a Friend
             </button>
         </Link>
@@ -111,7 +117,9 @@ function JoinRoomOption(props) {
                                placeholder='Room-ID'/>
                     </label>
                     <Link to={`/play/${roomID}`} className="link">
-                        <button className='menu-button join-room'>
+                        <button className='menu-button join-room' onClick={() => {
+                            props.eventTracker('joinRoom', 'click');
+                        }}>
                             Join
                         </button>
                     </Link>
@@ -123,8 +131,10 @@ function JoinRoomOption(props) {
 function BotOption(props) {
     return (
         <Link to={`/play/`} className="link">
-            <button type='button' className='menu-cell menu-cell-first play-bot'>
-                Play against AI
+            <button type='button' className='menu-cell menu-cell-first play-bot' onClick={() => {
+                props.eventTracker('playAI', 'click');
+            }}>
+                Play Against Easy AI
             </button>
         </Link>
     );
@@ -134,7 +144,9 @@ function CreateTournamentOption(props) {
     const roomID = globalConstants.generateUID();
     return (
         <Link to={`/tournament/${roomID}`} className="link">
-            <button className='menu-cell menu-cell-middle create-tournament'>
+            <button className='menu-cell menu-cell-middle create-tournament' onClick={() => {
+                props.eventTracker('createTournament', 'click');
+            }}>
                 Create Tournament
             </button>
         </Link>
@@ -169,7 +181,9 @@ function JoinTournamentOption(props) {
                                placeholder='Tournament-ID'/>
                     </label>
                     <Link to={`/tournament/${tourID}`} className="link">
-                        <button className='menu-button join-tournament'>
+                        <button className='menu-button join-tournament' onClick={() => {
+                            props.eventTracker('joinTournament', 'click');
+                        }}>
                             Join
                         </button>
                     </Link>
@@ -180,7 +194,9 @@ function JoinTournamentOption(props) {
 
 function OfflineOption(props) {
     return (
-        <Link to={`/playoffline/`} className="link">
+        <Link to={`/playoffline/`} className="link" onClick={() => {
+            props.eventTracker('playOffline', 'click');
+        }}>
             <button type='button' className='menu-cell menu-cell-first play-offline'>
                 Play Offline
             </button>
@@ -191,7 +207,9 @@ function OfflineOption(props) {
 function ProjectInfo(props) {
     return (
         <a href="https://github.com/noahmatsuyoshi/ultimate-tic-tac-toe" target="_blank" className="link">
-            <button className='menu-cell menu-cell-middle project-info link' type='button'>
+            <button className='menu-cell menu-cell-middle project-info link' type='button' onClick={() => {
+                props.eventTracker('projectInfo', 'click');
+            }}>
                 <img className="project-info-img" src={process.env.PUBLIC_URL + "/github.png"}/>
                 <div className="link">
                     Open Source
@@ -202,7 +220,7 @@ function ProjectInfo(props) {
     )
 }
 
-function login(username, password) {
+function login(username, password, setErrMsg) {
     fetch("/login", {
         method: 'POST',
         credentials: 'include',
@@ -213,11 +231,11 @@ function login(username, password) {
     })
         .then(res => {
             console.log(res)
-            if (res.status !== 200) {
-                console.log(res);
-                throw res;
+            if (!res.ok) {
+                setErrMsg(res.statusText);
+            } else {
+                window.location.reload();
             }
-            window.location.reload();
         })
         .catch(error => {
             console.log(`Error: ${error}`);
@@ -228,6 +246,7 @@ function ProfileOption(props) {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [avatarImage, setAvatarImage] = useState(null);
+    const [errMsg, setErrMsg] = useState("");
 
     return (
         <div className='menu-cell menu-cell-last'>
@@ -244,12 +263,18 @@ function ProfileOption(props) {
                             e.preventDefault();
                             setAvatar(avatarImage);
                             setAvatarImage(null);
-                        }}/> : <LogoutOption/>}
+                        }}/> : <LogoutOption eventTracker={props.eventTracker}/>}
+                    </div>
+                    <div className='vertical-list-child'>
+                        <div className='text-error'>
+                            {errMsg}
+                        </div>
                     </div>
                 </div> :
                 <form onSubmit={e => {
                     e.preventDefault();
-                    login(username, password);
+                    props.eventTracker('login', 'click');
+                    login(username, password, setErrMsg);
                     return false;
                 }} className='vertical-list'>
                     <label className='vertical-list-child'>
@@ -262,12 +287,13 @@ function ProfileOption(props) {
                     </label>
                     <button className='menu-button join-tournament' onClick={e => {
                         e.preventDefault();
-                        login(username, password);
+                        props.eventTracker('login', 'click');
+                        login(username, password, setErrMsg);
                         return false;
                     }}>
                         Login/Register
                     </button>
-                    <div className="text-error">{globalConstants.getLoginError()}</div>
+                    <div className="text-error">{errMsg}</div>
                 </form>}
         </div>
     )
@@ -302,6 +328,7 @@ function AvatarOption(props) {
             <input type="file" style={{display: "none"}}
                onChange={event => {
                    event.preventDefault();
+                   props.eventTracker('submitAvatar', 'uploadFile');
                    resizeImage(event.target.files[0], fileReader);
                }}/>
         </label>
@@ -310,7 +337,9 @@ function AvatarOption(props) {
 
 function LogoutOption(props) {
     return (
-        <Link to={`/logout/`} className="link">
+        <Link to={`/logout/`} className="link" onClick={() => {
+            props.eventTracker('logout', 'click');
+        }}>
             <button className="menu-button logout">
                 Logout
             </button>
@@ -320,16 +349,21 @@ function LogoutOption(props) {
 
 function SubmitAvatarOption(props) {
     return (
-        <button className="menu-button create-room" onClick={props.submitAvatar}>
+        <button className="menu-button create-room" onClick={() => {
+            props.eventTracker('submitAvatar', 'click');
+            props.submitAvatar();
+        }}>
             Submit
         </button>
     );
 }
 
-function PlayerStatsOption() {
+function PlayerStatsOption(props) {
     return (
         <Link to={`/stats/`} className="player-stats-button-container link">
-            <button className="player-stats-button find-room">
+            <button className="player-stats-button find-room" onClick={() => {
+                props.eventTracker('playerStats', 'click');
+            }}>
                 Player Stats
             </button>
         </Link>
@@ -383,8 +417,8 @@ function resizeImage(file, fileReader) {
 
 function Logout(props) {
     const cookies = new Cookies();
-    cookies.set('username', "")
-    cookies.set('accessToken', "")
+    cookies.set('username', "");
+    cookies.set('accessToken', "");
     return (
         <Redirect to=""/>
     );

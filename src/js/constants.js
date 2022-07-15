@@ -2,6 +2,8 @@ import cookie from "cookie";
 
 export const SOCKET_SERVER_URI = "";
 
+export const GA_TRACKING_ID = "G-S7WD6K0X84";
+
 export const botParameters = Object.freeze({
     botTurnDelay: 1000,
     stopBotSearch: 5*60*1000, // 5 minutes
@@ -102,12 +104,6 @@ export function getToken() {
     return null;
 }
 
-export function getLoginError() {
-    const cookies = cookie.parse(document.cookie);
-    if('loginError' in cookies) return cookies.loginError;
-    return "";
-}
-
 export function getRPSCookie() {
     const cookies = cookie.parse(document.cookie);
     if(('rps' in cookies) && (cookies.rps !== "") && (cookies.rps !== "undefined")) return (cookies.rps === "true");
@@ -119,8 +115,6 @@ export function setRPSCookie(value) {
         method: "POST",
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({rps: value})
-    }).then(res => {
-        console.log("Request complete! response:", res);
     });
 }
 

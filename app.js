@@ -31,7 +31,6 @@ const generateUID = () => {
     secondPart = ("000" + secondPart.toString(36)).slice(-3);
     return firstPart + secondPart;
 }
-
 const cookieOptions = { maxAge: 1000*60*24, sameSite: 'strict', secure: false };
 
 app.use(cookieParser());
@@ -50,7 +49,6 @@ app.use((req, res, next) => {
 
 // verify jwt token
 app.use((req, res, next) => {
-    console.log(req.cookies);
     if(('accessToken' in req.cookies) && req.cookies.accessToken !== "undefined" && req.cookies.accessToken !== "" &&
         'username' in req.cookies && req.cookies.username !== "" && req.cookies.username !== "undefined") {
         jwt.verify(req.cookies.accessToken, process.env.API_SECRET, function (err, decode) {
@@ -71,9 +69,17 @@ app.use((req, res, next) => {
 
 app.post('/login', async function(req, res) {
     if(!req.body.username || !req.body.password) return;
-    const username = globalConstants.sanitize(req.body.username);
-    const password = globalConstants.sanitize(req.body.password);
-    console.log(`login req made, ${username}`);
+    const userObj = globalConstants.validate('user', {
+        username: req.body.username,
+        password: req.body.password,
+    }, res);
+    if(userObj === null) {
+
+        return;
+    }
+
+    const username = userObj.username;
+    const password = userObj.password;
     let user = await dynamoHelper.getUser(username);
     if(!('password' in user) || (!user.password || (user.password === ""))) {
         await dynamoHelper.setPassword(username, password);
@@ -83,26 +89,24 @@ app.post('/login', async function(req, res) {
     const trueHash = user.password;
     // checking if password was valid and send response accordingly
     if (reqHash !== trueHash) {
-        res.cookie("loginError", "Invalid password or username taken", cookieOptions);
-        return res.status(400)
-            .send({
-                accessToken: null,
-                message: "Invalid password or username taken"
-            });
+        res.statusMessage = "Invalid password";
+        res.status(400).send();
+    } else {
+        //signing token with user id
+        const token = jwt.sign({
+            id: user.token
+        }, process.env.API_SECRET, {
+            expiresIn: 86400
+        });
+
+        res.cookie("loginError", "", cookieOptions);
+        res.cookie("accessToken", token, cookieOptions);
+        res.cookie("username", user.token, cookieOptions);
+
+        //responding to client request with user profile success message and  access token .
+        res.status(200).send();
     }
-    //signing token with user id
-    const token = jwt.sign({
-        id: user.token
-    }, process.env.API_SECRET, {
-        expiresIn: 86400
-    });
 
-    res.cookie("loginError", "", cookieOptions);
-    res.cookie("accessToken", token, cookieOptions);
-    res.cookie("username", user.token, cookieOptions);
-
-    //responding to client request with user profile success message and  access token .
-    res.status(200).send();
 });
 
 app.get('/getStats', async function(req, res, next) {
@@ -127,12 +131,14 @@ app.post('/setAvatar', async function(req, res) {
         jwt.verify(req.cookies.accessToken, process.env.API_SECRET, function (err, decode) {
             if (err) {
                 res.clearCookie('username', cookieOptions);
-                res.status(401)
-                    .send({
-                        message: "Re-login needed"
-                    });
+                return res.status(401).send("Re-login needed");
             }
             else {
+                try {
+                    window.atob(req.body.base64);
+                } catch (e) {
+                    return res.status(400).send("Invalid image uploaded")
+                }
                 image = req.body.base64;
                 username = req.cookies.username;
             };
@@ -140,10 +146,7 @@ app.post('/setAvatar', async function(req, res) {
     }
     if(image) {
         await dynamoHelper.updateUser(username, {"avatarBase64": image});
-        res.status(200)
-            .send({
-                message: "Avatar change successful"
-            });
+        res.status(200).send("Avatar change successful");
     }
 });
 

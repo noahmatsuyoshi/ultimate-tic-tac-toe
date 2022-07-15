@@ -209,16 +209,19 @@ const commonChecks = {
     }
 }
 
+const alphanum_regex = /^[a-z0-9]+$/i;
+const num_regex = /^[a-z0-9]+$/i;
+
 // data input validation
 const validation = {
     roomNewMove: {
         gameIndex: {
             type: "number",
-            func: (v) => ((v >= 0) && (v <= 8)),
+            func: (v) => ((v >= 0) && (v <= 8)) ? v : null,
         },
         boardIndex: {
             type: "number",
-            func: (v) => ((v >= 0) && (v <= 8)),
+            func: (v) => ((v >= 0) && (v <= 8)) ? v : null,
         },
     },
     roomSetAvatar: {
@@ -238,10 +241,7 @@ const validation = {
         bestOf: {
             type: "string",
             func: (v) => {
-                v = sanitize(v);
-                for (let i = 0; i < v.length; i++) {
-                    if(isNaN(parseInt(v.charAt(i)))) return false;
-                }
+                if(v.match(num_regex)[0] !== v) return null;
                 if(parseInt(v) % 2 == 0) return false;
                 return true;
             },
@@ -252,37 +252,67 @@ const validation = {
         playerLimit: {
             type: "string",
             func: (v) => {
-                v = sanitize(v);
-                for (let i = 0; i < v.length; i++) {
-                    if (isNaN(parseInt(v.charAt(i)))) return false;
-                }
-                if (parseInt(v) % 2 == 0) return false;
-                return true;
+                if(!v.match(num_regex)) return null;
+                if (!Number.isInteger(Math.log2(parseInt(v)))) return null;
+                return v;
             },
         }
+    },
+    user: {
+        username: {
+            type: "string",
+            func: (v, res) => {
+                if(v.match(alphanum_regex)[0] !== v) {
+                    res.statusMessage = "Username must only contain alphanumeric characters";
+                    res.status(400).send();
+                    return null;
+                }
+                return v;
+            }
+        },
+        password: {
+            type: "string",
+            func: (v, res) => {
+                if(v.match(alphanum_regex)[0] !== v) {
+                    res.statusMessage = "Password must only contain alphanumeric characters";
+                    res.status(400).send();
+                    return null;
+                }
+                return v;
+            }
+        }
     }
+
 }
 module.exports.validation = validation;
 
-module.exports.validate = (fieldName, data) => {
+module.exports.validate = (fieldName, data, res) => {
     const checks = validation[fieldName];
-    return _validate(checks, data);
+    return _validate(checks, data, res);
 }
 
-function _validate(checks, fields) {
+function _validate(checks, data, res=null) {
     for (let k in checks) {
-        if(!(k in fields)) continue;
-        const check = checks[k],
-            field = fields[k];
+        if(!(k in data)) continue;
+        const check = checks[k];
+        let v = data[k];
+        if(typeof v === "string")
+            v = sanitize(data[k]);
         if('type' in check) {
-            if(typeof field !== check.type) return false;
-            if('length' in check && field.length > check.length) return false;
-            if('func' in check && !check.func(field)) return false;
+            if(typeof v !== check.type) return null;
+            if('length' in check && v.length > check.length) {
+                if(res !== null)
+                    res.statusMessage = `${k} must be at least ${check.length} characters long`;
+                    res.status(400).send();
+                return null;
+            }
+            if('func' in check && !check.func(v, res)) return null;
         } else {
-            if(!_validate(check, field)) return false;
+            if(!_validate(check, v)) return null;
         }
+        data[k] = v;
     }
-    return true;
+    return data;
 }
 
 const sanitize = function sanitize(str){
