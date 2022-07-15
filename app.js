@@ -134,11 +134,6 @@ app.post('/setAvatar', async function(req, res) {
                 return res.status(401).send("Re-login needed");
             }
             else {
-                try {
-                    window.atob(req.body.base64);
-                } catch (e) {
-                    return res.status(400).send("Invalid image uploaded")
-                }
                 image = req.body.base64;
                 username = req.cookies.username;
             };
@@ -205,7 +200,7 @@ io.on("connection", async (socket) => {
         if (roomID !== 'undefined' && roomType === 't') {
             id2manager[roomID] = await registerTournamentManager(id2manager, socket, token, roomID, dynamoHelper, rps);
         } else if (roomID === 'undefined' || roomType === 'b') {
-            const manager = await registerBotManager(id2manager[roomID], socket, token, roomID);
+            const manager = await registerBotManager(id2manager[roomID], socket, token, roomID, dynamoHelper);
             if (roomID !== 'undefined') id2manager[roomID] = manager;
         } else {
             if (roomType === "t") {

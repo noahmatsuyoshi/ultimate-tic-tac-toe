@@ -268,11 +268,10 @@ function ProfileOption(props) {
                         {avatarImage !== null ? <img src={avatarImage} className="avatar-img"/> : globalConstants.getToken()}
                     </div>
                     <div className='vertical-list-child'>
-                        <AvatarOption setAvatarImage={setAvatarImage}/>
+                        <AvatarOption setAvatarImage={setAvatarImage} eventTracker={props.eventTracker}/>
                     </div>
                     <div className='vertical-list-child'>
-                        {avatarImage !== null ? <SubmitAvatarOption submitAvatar={e => {
-                            e.preventDefault();
+                        {avatarImage !== null ? <SubmitAvatarOption eventTracker={props.eventTracker} submitAvatar={() => {
                             setAvatar(avatarImage);
                             setAvatarImage(null);
                         }}/> : <LogoutOption eventTracker={props.eventTracker}/>}

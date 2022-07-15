@@ -169,6 +169,7 @@ export function OfflineGame(props) {
     boards: Array(9).fill(Array(9).fill(null)),
     wonBoards: Array(9).fill(null),
     nextIndex: -1,
+    avatarToImage: {},
   });
   const [tourData, setTourData] = useState({
     tourID: "",
