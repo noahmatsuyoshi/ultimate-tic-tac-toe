@@ -10,7 +10,18 @@ import * as globalConstants from './js/constants';
 import './css/index.css';
 import {getToken} from "./js/constants";
 import Cookies from 'universal-cookie';
-import useAnalyticsEventTracker from './js/analyticsHelper';
+import ReactGA from 'react-ga4';
+import {GA_TRACKING_ID} from "./js/constants";
+
+ReactGA.initialize(GA_TRACKING_ID);
+
+const useAnalyticsEventTracker = (category) => {
+    const eventTracker = (label, action) => {
+        ReactGA.event({category, action, label});
+    }
+    return eventTracker;
+}
+export default useAnalyticsEventTracker;
 
 function MainMenu(props) {
     const [rps, setRPS] = useState(null);
@@ -47,12 +58,13 @@ function MainMenu(props) {
                     {xp !== null ?
                         <div className="exp-bar-player-stats-container">
                             <ExperienceBar xp={xp}/>
-                            {<PlayerStatsOption/>}
+                            {<PlayerStatsOption eventTracker={eventTracker}/>}
                         </div> : <div />
                     }
                     <div className="rps-option">
                         RPS Mode? <input className="rps-checkbox" type="checkbox" checked={rps} onChange={
                         () => {
+                                eventTracker('rpsMode', rps ? 'off' : 'on');
                                 globalConstants.setRPSCookie(!rps);
                                 setRPS(!rps);
                             }
