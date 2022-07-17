@@ -79,6 +79,16 @@ html, body, #reactapp, .App, #app {
     background-color: #fa23d7;
 }
 
+.flex-h {
+    display: flex;
+    flex-direction: row;
+}
+
+.flex-v {
+    display: flex;
+    flex-direction: column;
+}
+
 .choose-avatar {
     background-color: #0bc100;
     width: 80%;
@@ -214,10 +224,6 @@ ol, ul {
     justify-content: space-evenly;
 }
 
-.donate-inside {
-    width: 50%;
-}
-
 .menu-cell-first {
     border-width: 0px 5px 0px;
     border-color: black;
@@ -243,6 +249,38 @@ ol, ul {
     justify-content: center;
     width: 100%;
     height: 6vmin;
+}
+
+.time-limit-container {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    height: 3vmin;
+    line-height: 3vmin;
+}
+
+.time-limit-checkbox {
+    height: 3vmin;
+    width: 3vmin;
+}
+
+.time-limit-input {
+    width: 4vmin;
+    color: black;
+    font-size: 2vmin;
+    line-height: 3vmin;
+}
+
+.time-limit-text-label {
+     justify-content: center;
+     vertical-align: middle;
+     line-height: 3vmin;
+     font-size: 2vmin;
+ }
+
+.rps-checkbox {
+    height: 3vmin;
+    width: 3vmin;
 }
 
 .player-stats-button-container {

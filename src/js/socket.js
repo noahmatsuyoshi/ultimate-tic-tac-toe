@@ -84,7 +84,7 @@ export const useSocketTournament = (roomID, updateClient, errorCallback) => {
     return { changeMyName, start, shuffle, changeSettings, kickPlayer }
 };
 
-export const useSocket = (roomID, setGameData, setAvatar, setTourData, setSpectator, setSwitchTourney, setRps) => {
+export const useSocket = (roomID, setGameData, setAvatar, setTourData, setSpectator, setSwitchTourney, setRps, timeLimit) => {
     const socketRef = useRef();
 
     const sendNewMove = (gameIndex, boardIndex) => {
@@ -124,7 +124,7 @@ export const useSocket = (roomID, setGameData, setAvatar, setTourData, setSpecta
         let firstConnect = false;
         if (!socketRef.current) {
             socketRef.current = socketIOClient(globalConstants.SOCKET_SERVER_URI, {
-                query: { roomID, rps: globalConstants.getRPSCookie() },
+                query: { roomID, rps: globalConstants.getRPSCookie(), timeLimit },
                 transports: ['websocket', 'polling'],
                 path: roomID ? `/socket.io/${roomID.charAt(0)}/` : '/socket.io',
             });

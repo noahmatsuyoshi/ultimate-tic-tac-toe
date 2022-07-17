@@ -61,6 +61,7 @@ class BotManager extends Manager {
     }
 
     win(winnerAvatar, playerAvatar) {
+        this.active = false;
         if(!('tourData' in this)) return;
         const tokens = Object.keys(this.tourData.gameWinCount);
         let playerToken = tokens[0];

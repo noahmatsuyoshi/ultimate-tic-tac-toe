@@ -4,6 +4,7 @@ class Manager {
         this.roomType = roomType;
         this.handlers = {};
         this.activeTokens = new Set();
+        this.active = true;
     }
 
     isTokenRegistered(token) {

@@ -175,8 +175,9 @@ io.on("connection", async (socket) => {
     if(('username' in socket) && (socket.username) && (socket.username !== 'undefined'))
         token = socket.username
 
-    let { roomID, tournament, matchmaking, rps } = socket.handshake.query;
+    let { roomID, tournament, matchmaking, rps, timeLimit } = socket.handshake.query;
     rps = rps === "true";
+    if(timeLimit) timeLimit = 1000*parseInt(timeLimit);
     if(roomID && roomID !== "undefined") {
         if(isNaN(parseInt(roomID.charAt(0)))) return;
         roomID = globalConstants.sanitize(roomID).toLowerCase();
@@ -208,7 +209,7 @@ io.on("connection", async (socket) => {
                 socket.emit(globalConstants.eventTypes.SWITCH_TOURNEY_EVENT);
                 return;
             }
-            id2manager[roomID] = await registerRoomManager(id2manager, socket, token, roomID, dynamoHelper, rps);
+            id2manager[roomID] = await registerRoomManager(id2manager, socket, token, roomID, dynamoHelper, rps, timeLimit);
         }
     }
 

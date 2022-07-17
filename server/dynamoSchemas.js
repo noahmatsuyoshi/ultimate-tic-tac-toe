@@ -50,7 +50,15 @@ const gameSchemaJSON = {
     rpsMoves: {
         dynamoAttrType: "S",
         type: "json",
-    }
+    },
+    timeLimit: {
+        dynamoAttrType: "N",
+        type: "int",
+    },
+    active: {
+        dynamoAttrType: "BOOL",
+        type: "bool",
+    },
 }
 module.exports.json.gameSchema = gameSchemaJSON;
 

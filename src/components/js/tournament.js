@@ -91,6 +91,8 @@ class ConnectionPanel extends PureComponent {
             name: "",
             bestOf: 1,
             ai: true,
+            timeLimitEnabled: false,
+            timeLimit: 60,
             firstPlayer: false,
             roomID: "",
             survived: true,
@@ -129,26 +131,6 @@ class ConnectionPanel extends PureComponent {
                     </div>
                 </div>
                 <form className="container-settings" onSubmit={(e) => {e.preventDefault()}}>
-                    <div className="container-name">
-                        <label className="text-normal input-height">
-                            Your name: {" "}
-                            <input
-                                className="input-height"
-                                type="textarea"
-                                value={this.state.name}
-                                onChange={(e) => this.setState({name: e.target.value})}
-                                onSubmit={this.changeName}
-                                placeholder="20 char max" />
-                        </label>
-                        <label>
-                            <button
-                                className="input-height text-black"
-                                type="button"
-                                onClick={this.changeName}>
-                                Change Name
-                            </button>
-                        </label>
-                    </div>
                     <div className="container-name-error">
                         {this.state.errorMessage === "" ?
                             <div /> :
@@ -181,6 +163,31 @@ class ConnectionPanel extends PureComponent {
                                    }) : e => false}
                             />
                             If player has no match, play against AI
+                        </label>
+                    </div>
+                    <div className="container-time-limit">
+                        <label className="text-normal flex-h">
+                            <input readOnly={!this.state.firstPlayer} className="time-limit-checkbox"
+                                   type="checkbox" checked={this.state.timeLimitEnabled} onChange={
+                                () => {
+                                    const newState = {timeLimitEnabled: !this.state.timeLimitEnabled}
+                                    if(this.state.timeLimitEnabled) {
+                                        newState.timeLimit = 0;
+                                    } else {
+                                        newState.timeLimit = 30;
+                                    }
+                                    this.setState(newState);
+                                    this.props.changeSettings(newState);
+                                }
+                            }/>
+                            {this.state.timeLimitEnabled ? <div className="time-limit-text-label">
+                                <input size={1} className="time-limit-input" type="number"
+                                       value={this.state.timeLimit} onChange={e =>
+                                        {
+                                           this.setState({timeLimit: e.target.value});
+                                           this.props.changeSettings({timeLimit: e.target.value});
+                                       }} /> seconds
+                            </div> : " time limit?"}
                         </label>
                     </div>
                     <div className="container-player-limit">
