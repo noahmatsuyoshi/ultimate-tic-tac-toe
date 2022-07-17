@@ -253,7 +253,7 @@ class RoomManager extends Manager {
     startTurnTimer() {
         if(this.timeLimit) {
             this.resetTurnTimer();
-            this.turnTimer = globalConstants.turnTimer(1000*this.timeLimit, this, () => {
+            this.turnTimer = globalConstants.turnTimer(this.timeLimit, this, () => {
                 const randomMove = this.getRandomMove();
                 if(randomMove !== null)
                     this.newMove(randomMove,

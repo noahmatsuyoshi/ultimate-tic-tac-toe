@@ -297,7 +297,7 @@ class TournamentManager extends Manager {
                         })
                         if(this.settings.timeLimitEnabled)
                             this.dynamoHelper.updateGame(roomID, {
-                                "timeLimit": this.settings.timeLimit
+                                "timeLimit": this.settings.timeLimit.toString()
                             })
                     }
                     this.id2manager[roomID] = new RoomManager(roomID, this.dynamoHelper, firstToken, tourData, gameData, this.rps, this.settings.timeLimit);
