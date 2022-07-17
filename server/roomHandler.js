@@ -21,7 +21,6 @@ class RoomHandler extends SocketHandler {
             if(!this.manager.isTokenRegistered(this.token)) return;
             if(!globalConstants.validate('roomNewMove', move)) return;
             this.manager.newMove(move, this.token);
-            this.manager.forceAllClientsUpdate();
         });
     }
 
@@ -37,7 +36,7 @@ class RoomHandler extends SocketHandler {
     setupRestartGameEvent() {
         this.socket.on(globalConstants.eventTypes.RESTART_GAME_EVENT, () => {
             if(!this.manager.isTokenRegistered(this.token)) return;
-            if(!this.manager.isGameOver()) return;
+            if(!this.manager.winner) return;
             if(this.manager.rpsFromStart) {
                 this.manager.rpsMoves = {};
                 this.manager.rpsWinnerToken = "";
@@ -67,7 +66,7 @@ class RoomHandler extends SocketHandler {
 }
 
 class RoomManager extends Manager {
-    constructor(id, dynamoHelper, token1, tourData=null, oldState=null, rps=null) {
+    constructor(id, dynamoHelper, token1, tourData=null, oldState=null, rps=null, timeLimit=null) {
         super(id);
         if(tourData) this.tourData = tourData;
         this.type = 'r';
@@ -76,19 +75,25 @@ class RoomManager extends Manager {
         this.rpsMoves = null;
         if(rps) this.rpsMoves = {};
         this.rpsFromStart = rps;
+        this.timeLimit = timeLimit;
+        this.countdown = timeLimit;
         this.rpsWinnerToken = null;
         this.playerTokens = new globalConstants.TwoWayMap();
         this.playerTokens.set(token1, "");
         this.avatarToImage = {};
+        this.winner = null;
         this.firstPlayer = token1;
         this.room = new Room(this);
         if(oldState) {
             for(let k in oldState) {
-                if(['rpsFromStart', 'rpsMoves', 'playerTokens', 'avatarToImage', 'firstPlayer'].includes(k)) {
+                if(['active', 'timeLimit', 'rpsFromStart', 'rpsMoves', 'playerTokens', 'avatarToImage', 'firstPlayer'].includes(k)) {
                     this[k] = oldState[k];
                 } else {
                     this.room[k] = oldState[k];
                 }
+            }
+            if(('playerTokens' in oldState) && (Object.keys(oldState['playerTokens']).length === 2)) {
+                this.startGame();
             }
         } else {
             this.dynamoHelper.updateGame(id, {
@@ -96,6 +101,7 @@ class RoomManager extends Manager {
                 "dateCreated": Date.now().toString(),
             });
             if(rps) this.dynamoHelper.updateGame(id, {"rpsFromStart": rps});
+            if(timeLimit) this.dynamoHelper.updateGame(id, {"timeLimit": timeLimit});
         }
     }
 
@@ -128,22 +134,18 @@ class RoomManager extends Manager {
         if(!('boards' in room)) room.resetGame();
     }
 
-    isGameOver() {
-        if(this.rpsFromStart) {
-            const values = Object.values(this.rpsMoves);
-            return (values.length === 2) && (values.every(v => v !== ""));
-        }
-        const winner = this.calculateWinner(this.room.wonBoards);
-        if(winner) {
-            this.dynamoHelper.updateGame(this.id, {
-                "winnerToken": winner,
-                [`boards_${this.gameCount}`]: winner,
-            });
-        }
-        return winner !== null;
+    gameWon(winnerAvatar) {
+        this.winner = winnerAvatar;
+        this.active = false;
+        const winnerToken = this.playerTokens.revGet(winnerAvatar);;
+        const loserToken = this.playerTokens.revGet(winnerAvatar === "X" ? "O" : "X");
+        if(!this.rpsFromStart) this.dynamoHelper.winGame(winnerToken, loserToken);
+        if('tourData' in this) this.tourWin(winnerToken);
+        this.forceAllClientsUpdate();
     }
 
     newMove(move, token) {
+        if(this.timeLimit) this.resetTurnTimer();
         this.room.newMove(move, token);
         this.dynamoHelper.updateGame(this.id, {
             "boards": JSON.stringify(this.room.boards),
@@ -151,6 +153,7 @@ class RoomManager extends Manager {
             "nextIndex": this.room.nextIndex.toString(),
             "xNext": this.room.xNext,
         });
+        this.forceAllClientsUpdate();
     }
 
     resetGame() {
@@ -205,9 +208,8 @@ class RoomManager extends Manager {
             this.fillRPSData(data, token)
         }
         this.room.updateGame(data);
-        if('tourData' in this) {
-            this.fillTourData(data);
-        }
+        if('tourData' in this) this.fillTourData(data);
+        if(this.countdown) data.countdown = this.countdown;
         return data;
     }
 
@@ -225,6 +227,50 @@ class RoomManager extends Manager {
             "playerTokens": JSON.stringify(this.playerTokens.map),
             "avatarToImage": JSON.stringify(this.avatarToImage),
         });
+        this.startGame();
+    }
+
+    getRandomMoveFromBoard(gameIndex) {
+        for(let i = 0; i < 9; i++) {
+            if(this.room.boards[gameIndex][i] === null) return {gameIndex, boardIndex: i};
+        }
+        return null;
+    }
+
+    getRandomMove() {
+        let gameIndex = this.room.nextIndex;
+        if((gameIndex === -1) || (this.room.wonBoards[gameIndex] !== null)) {
+            for(let i = 0; i < 9; i++) {
+                if(this.room.wonBoards[i] === null) {
+                    gameIndex = i;
+                    break;
+                }
+            }
+        }
+        return this.getRandomMoveFromBoard(gameIndex);
+    }
+
+    startTurnTimer() {
+        if(this.timeLimit) {
+            this.resetTurnTimer();
+            this.turnTimer = globalConstants.turnTimer(1000*this.timeLimit, this, () => {
+                const randomMove = this.getRandomMove();
+                if(randomMove !== null)
+                    this.newMove(randomMove,
+                        this.room.xNext ?
+                            this.playerTokens.revGet("X") :
+                            this.playerTokens.revGet("O"));
+            })
+        }
+    }
+
+    resetTurnTimer() {
+        this.lastMoveTime = Date.now();
+        this.countdown = this.timeLimit;
+    }
+
+    startGame() {
+        this.startTurnTimer();
     }
 
     startRps() {
@@ -250,12 +296,7 @@ class RoomManager extends Manager {
         if(winnerToken) {
             this.rpsWinnerToken = winnerToken;
             this.dynamoHelper.updateGame(this.id, {"rpsMoves": JSON.stringify(this.rpsMoves)})
-            if(!this.rpsFromStart)
-                this.dynamoHelper.winGame(winnerToken, loserToken);
-            if('tourData' in this) {
-                this.tourWin(winnerToken);
-            }
-            this.forceAllClientsUpdate();
+            this.gameWon(this.playerTokens.get(winnerToken));
         }
     }
 
@@ -303,17 +344,7 @@ class Room {
     checkGameWinner() {
         const winner = this.manager.calculateWinner(this.wonBoards);
         if(winner === 'T') this.manager.startRps();
-        else if(winner !== null) {
-            let winnerToken;
-            let loserToken;
-            this.manager.playerTokens.entries.forEach(e => {
-                if(e[1] === winner) winnerToken = e[0];
-                else loserToken = e[0];
-            })
-            this.manager.dynamoHelper.winGame(winnerToken, loserToken);
-            if('tourData' in this.manager)
-                this.manager.tourWin(winnerToken);
-        }
+        else if(winner !== null) this.manager.gameWon(winner);
     }
 
     newMove(move, token) {
@@ -335,11 +366,11 @@ class Room {
     }
 }
 
-module.exports.registerRoomManager = async (id2manager, socket, token, id, dynamoHelper, rps=null) => {
+module.exports.registerRoomManager = async (id2manager, socket, token, id, dynamoHelper, rps, timeLimit) => {
     let manager;
     if (!(id in id2manager)) {
         const gameData = await dynamoHelper.getGame(id);
-        manager = new RoomManager(id, dynamoHelper, token, null, gameData, rps);
+        manager = new RoomManager(id, dynamoHelper, token, null, gameData, rps, timeLimit);
     }
     else manager = id2manager[id];
     await initHandler(manager, socket, id, token, RoomHandler);

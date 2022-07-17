@@ -13,6 +13,7 @@ module.exports.startTimer = (socket, manager, id2manager) => {
             const tokens = Object.keys(manager.tourData.gameWinCount);
             manager.onWin(Math.random() < 0.5 ? tokens[0] : tokens[1]);
         }
+        manager.active = false;
         delete id2manager[manager.id];
         console.log("timeout");
         socket.disconnect();

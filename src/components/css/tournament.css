@@ -162,10 +162,15 @@ body {
     flex: 0.2;
 }
 
+.h-align {
+    display: inline;
+}
+
 .container-settings {
     display: flex;
     flex-direction: column;
     flex: 0.8;
+    width: 40vw;
 }
 
 .container-name {
@@ -198,4 +203,11 @@ body {
 
 .container-end-block {
     flex: 0.25;
+}
+
+.container-time-limit {
+    flex: 0.15;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }

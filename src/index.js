@@ -89,15 +89,41 @@ function FindRoomOption(props) {
 }
 
 function CreateRoomOption(props) {
+    const [timeLimit, setTimeLimit] = useState(30);
+    const [timeLimitEnabled, setTimeLimitEnabled] = useState(false);
+
     const roomID = globalConstants.generateUID();
     return (
-        <Link to={`/play/${roomID}`} className="link">
-            <button className='menu-cell menu-cell-middle create-room' onClick={() => {
-                props.eventTracker('createRoom', 'click');
-            }}>
-                Play a Friend
-            </button>
-        </Link>
+        <div className='menu-cell menu-cell-middle create-room'>
+            <div className="vertical-list">
+                <div className="vertical-list-child">
+                    <Link to={timeLimitEnabled ? `/play/${roomID}/${timeLimit}` : `/play/${roomID}`} className="link">
+                        <button className='menu-button create-room' onClick={() => {
+                            props.eventTracker('createRoom', 'click');
+                        }}>
+                            Create Room
+                        </button>
+                    </Link>
+                </div>
+                <div className="vertical-list-child">
+                    <div className="time-limit-container">
+                        <input className="time-limit-checkbox" type="checkbox" checked={timeLimitEnabled} onChange={
+                            () => {
+                                props.eventTracker('timeLimitEnabled', timeLimitEnabled ? 'off' : 'on');
+                                setTimeLimitEnabled(!timeLimitEnabled);
+                            }
+                        }/>
+                        {timeLimitEnabled ? <div className="time-limit-text-label">
+                            <input size={1} className="time-limit-input" type="number"
+                                   value={timeLimit} onChange={e => {setTimeLimit(e.target.value)}} /> seconds
+                        </div> : <div className="time-limit-text-label">
+                            time limit?
+                        </div>}
+                    </div>
+                </div>
+            </div>
+        </div>
+
     );
 }
 
@@ -447,7 +473,7 @@ class App extends PureComponent {
                 <Route exact path="/" component={MainMenu}/>
                 <Route exact path="/matchmaking" component={Matchmaking}/>
                 <Route exact path="/tournament/:roomID" component={Tournament}/>
-                <Route exact path="/play/:roomID" component={Online}/>
+                <Route exact path="/play/:roomID/:timeLimit?" component={Online}/>
                 <Route exact path="/play/" component={Online}/>
                 <Route exact path="/playoffline/" component={Offline}/>
                 <Route exact path="/logout/" component={Logout}/>

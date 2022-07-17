@@ -133,3 +133,10 @@ ol, ul {
 .avatar {
   max-width:100%;
 }
+
+.countdown-text {
+  font-size: large;
+  font-weight: bold;
+  color: red;
+  text-align: center;
+}

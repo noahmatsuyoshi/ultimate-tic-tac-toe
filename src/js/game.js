@@ -1,17 +1,18 @@
-import { PureComponent, useState } from 'react';
+import {PureComponent, useState, useEffect, useRef} from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useSocket } from './socket';
 import { Redirect } from 'react-router-dom';
 import { calculateWinner, calculateTie } from './winChecks';
 import RPS from '../components/js/rps';
 import '../css/game.css';
+import { useInterval } from '../hooks/useInterval';
 
 export function ConnectionHandler(props) {
-  const { roomID } = useParams();
+  const { roomID, timeLimit } = useParams();
   const [switchTourney, setSwitchTourney] = useState(false);
   return (
     switchTourney ? <Redirect to={`/tournament/${roomID}`} /> :
-    <OnlineGame roomID={roomID} setSwitchTourney={setSwitchTourney} {...props} />
+    <OnlineGame roomID={roomID} timeLimit={timeLimit} setSwitchTourney={setSwitchTourney} {...props} />
   );
 }
 
@@ -95,27 +96,28 @@ function SpectatorMessage(props) {
 
 function InfoDisplay(props) {
   let gamesWonElement = null;
-  if(props.tourData.tourID !== "") {
+  if (props.tourData.tourID !== "") {
     const gamesWon = [];
-    for(let k in props.tourData.gameWinCount) {
+    for (let k in props.tourData.gameWinCount) {
       gamesWon.push(<div>{`${k}: ${props.tourData.gameWinCount[k]}`}</div>);
     }
     gamesWonElement = (
-      <div>
-        {gamesWon}
-      </div>
+        <div>
+          {gamesWon}
+        </div>
     );
   }
   return (
-    <div>
-      {props.spectator ? <SpectatorMessage /> :
-      props.winner ? <WinDisplay {...props}/> : <TurnDisplay {...props}/>}
-      {gamesWonElement === null ? <div/> : 
-      <div className="score-display">
-        <br/>
-        {gamesWonElement}
-      </div>}
-    </div>
+      <div>
+        {props.spectator ? <SpectatorMessage/> :
+            props.winner ? <WinDisplay {...props}/> : <TurnDisplay {...props}/>}
+        {gamesWonElement === null ? <div/> :
+            <div className="score-display">
+              <br/>
+              {gamesWonElement}
+            </div>}
+        {props.gameData.countdown ? <div className="countdown-text">{Math.max(0, props.gameData.countdown)}</div> : <div/>}
+      </div>
   )
 }
 
@@ -139,6 +141,7 @@ function OnlineGame(props) {
     nextIndex: -1,
     allowRestart: false,
     avatarToImage: {},
+    countdown: null,
   });
   const [avatar, setAvatar] = useState("");
   const [spectator, setSpectator] = useState(false);
@@ -149,7 +152,16 @@ function OnlineGame(props) {
     gameWinCount: {},
   })
   const [rps, setRps] = useState({on: false, active: false, winner: false, move: null});
-  const { sendNewMove, restartGame, setSocketAvatar, sendRpsMove } = useSocket(props.roomID, setGameData, setAvatar, setTourData, setSpectator, props.setSwitchTourney, setRps);
+
+  useInterval(() => {
+    if(!('countdown' in gameData)) return;
+    const gameDataCopy = Object.assign({}, gameData);
+    gameDataCopy.countdown -= 1;
+    setGameData(gameDataCopy);
+  }, 1000);
+
+  const { sendNewMove, restartGame, setSocketAvatar, sendRpsMove } = useSocket(props.roomID, setGameData, setAvatar, setTourData, setSpectator, props.setSwitchTourney, setRps, props.timeLimit);
+
   return (
     gameData.boards === null ? 
     <WaitingRoom roomID={props.roomID}  /> :
@@ -196,11 +208,12 @@ function GameContainer(props) {
     winner = winner_temp;
     console.log(calculateTie(props.gameData.boards, props.gameData.wonBoards));
 
-    if((!winner && !props.gameData.wonBoards.includes(null)) ||
+    if ((!winner && !props.gameData.wonBoards.includes(null)) ||
         calculateTie(props.gameData.boards, props.gameData.wonBoards)) {
       winner = 'T';
     }
   }
+
   return (
     [(props.rps && props.rps.on) ?
       <RPS rps={props.rps} sendRpsMove={props.sendRpsMove} /> : 

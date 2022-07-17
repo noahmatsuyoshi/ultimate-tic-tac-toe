@@ -166,6 +166,8 @@ class TournamentManager extends Manager {
             bestOf: 1,
             ai: true,
             playerLimit: null,
+            timeLimitEnabled: false,
+            timeLimit: null,
         };
         if(oldState && (Object.keys(oldState).length > 0)) {
             for(let k in oldState) {
@@ -293,8 +295,12 @@ class TournamentManager extends Manager {
                                 [secondToken]: "O",
                             })
                         })
+                        if(this.settings.timeLimitEnabled)
+                            this.dynamoHelper.updateGame(roomID, {
+                                "timeLimit": this.settings.timeLimit
+                            })
                     }
-                    this.id2manager[roomID] = new RoomManager(roomID, this.dynamoHelper, firstToken, tourData, gameData, this.rps);
+                    this.id2manager[roomID] = new RoomManager(roomID, this.dynamoHelper, firstToken, tourData, gameData, this.rps, this.settings.timeLimit);
                 })
             }
         }

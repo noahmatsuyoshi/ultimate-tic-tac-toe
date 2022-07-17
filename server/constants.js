@@ -7,6 +7,7 @@ const miscParameters = Object.freeze({
     timeout: 60 * 60 * 1000, // 1 hour
     checkTimeoutDelay: 10 * 60 * 1000, // 10 minutes
     matchmakingPingInterval: 5 * 1000, // 5 seconds
+    turnTimerInterval: 1000, // 1 second
 });
 module.exports.miscParameters = miscParameters;
 
@@ -185,11 +186,19 @@ const sleep = (duration) => {
 }
 module.exports.sleep = sleep;
 
+module.exports.turnTimer = async (timeLimit, roomManager, timeoutCallback) => {
+    while(roomManager.active) {
+        if(roomManager.lastMoveTime + timeLimit <= Date.now()) timeoutCallback();
+        roomManager.countdown -= 1;
+        await sleep(miscParameters.turnTimerInterval);
+    }
+}
+
 module.exports.checkTimeoutRoutine = async (manager, timeoutCallback) => {
     const timer = manager.timer;
-    while(manager.activeTokens.size === 0) {
+    while(manager.active) {
         if(module.exports.checkTimeout(timer, timeoutCallback)) return;
-        await sleep(module.exports.checkTimeoutDelay);
+        await sleep(miscParameters.checkTimeoutDelay);
     }
 }
 
@@ -256,6 +265,14 @@ const validation = {
                 if (!Number.isInteger(Math.log2(parseInt(v)))) return null;
                 return v;
             },
+        },
+        timeLimitEnabled: {
+            type: "boolean",
+        },
+        timeLimit: {
+            type: "number",
+            min: 0,
+            max: 2000,
         }
     },
     user: {
@@ -325,6 +342,8 @@ function _validate(checks, data, res=null) {
                 return null;
             }
             if('func' in check && !check.func(v, res)) return null;
+            if('min' in check && v < check.min) return null;
+            if('max' in check && v > check.max) return null;
         } else {
             if(!_validate(check, v)) return null;
         }
