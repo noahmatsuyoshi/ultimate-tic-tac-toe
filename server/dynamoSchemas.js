@@ -163,6 +163,10 @@ const tourSchemaJSON = {
         dynamoAttrType: "BOOL",
         type: "bool",
     },
+    timeLimit: {
+        dynamoAttrType: "N",
+        type: "int",
+    },
 }
 module.exports.json.tourSchema = tourSchemaJSON;
 

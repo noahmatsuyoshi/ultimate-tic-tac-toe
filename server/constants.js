@@ -188,7 +188,7 @@ module.exports.sleep = sleep;
 
 module.exports.turnTimer = async (timeLimit, roomManager, timeoutCallback) => {
     while(roomManager.active) {
-        if(roomManager.lastMoveTime + timeLimit <= Date.now()) timeoutCallback();
+        if(roomManager.lastMoveTime + 1000*timeLimit <= Date.now()) timeoutCallback();
         roomManager.countdown -= 1;
         await sleep(miscParameters.turnTimerInterval);
     }
