@@ -184,8 +184,8 @@ class ConnectionPanel extends PureComponent {
                                 <input size={1} className="time-limit-input" type="number"
                                        value={this.state.timeLimit} onChange={e =>
                                         {
-                                           this.setState({timeLimit: e.target.value});
-                                           this.props.changeSettings({timeLimit: e.target.value});
+                                           this.setState({timeLimit: parseInt(e.target.value)});
+                                           this.props.changeSettings({timeLimit: parseInt(e.target.value)});
                                        }} /> seconds
                             </div> : " time limit?"}
                         </label>
@@ -209,17 +209,13 @@ class ConnectionPanel extends PureComponent {
                         {this.state.firstPlayer && !this.state.started ?
                             <div>
                                 <br />
-                                <label>
-                                    <button className="menu-button find-room horizontal-align text-black" type="button" onClick={() => this.props.shuffle()}>Shuffle Bracket</button>
-                                </label>
+                                <button className="menu-button find-room horizontal-align text-black" type="button" onClick={() => this.props.shuffle()}>Shuffle Bracket</button>
                                 <br />
-                                <label>
-                                    <button className="menu-button create-room horizontal-align text-black"
-                                            type="button"
-                                            onClick={() => this.props.start()}>
-                                        START
-                                    </button>
-                                </label>
+                                <button className="menu-button create-room horizontal-align text-black"
+                                        type="button"
+                                        onClick={() => this.props.start()}>
+                                    START
+                                </button>
                             </div> :
                             <div/>}
                         {this.state.roomID === "" || !this.state.meSurvived ?
@@ -227,16 +223,15 @@ class ConnectionPanel extends PureComponent {
                         <div>
                             <br />
                             <br />
-                            <label>
-                                <Link className="link-button" to={{
+                            <div className="vertical-list-child">
+                                <Link className="link" to={{
                                     pathname: `/play/${this.state.roomID}`,
                                 }}>
-                                    <button className="menu-button create-room horizontal-align"
-                                            type="button">
+                                    <button className="menu-button create-room">
                                         JOIN CURRENT MATCH
                                     </button>
                                 </Link>
-                            </label>
+                            </div>
                         </div>}
                     </div>
                     <div className="container-end-block"/>

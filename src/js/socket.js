@@ -3,12 +3,12 @@ import socketIOClient from 'socket.io-client';
 import { BotManager } from "../ai/botManager";
 import * as globalConstants from './constants';
 
-export const useSocketMatchmaking = (matchFoundCallback, setWaitTime) => {
+export const useSocketMatchmaking = (matchFoundCallback, setWaitTime, timeLimit) => {
     const socketRef = useRef();
     useEffect(() => {
         if (!socketRef.current) {
             socketRef.current = socketIOClient(globalConstants.SOCKET_SERVER_URI, {
-                query: { matchmaking: true, rps: globalConstants.getRPSCookie() },
+                query: { matchmaking: true, rps: globalConstants.getRPSCookie(), timeLimit },
                 transports: ['websocket', 'polling']
             });
         }
@@ -24,7 +24,7 @@ export const useSocketMatchmaking = (matchFoundCallback, setWaitTime) => {
         return () => {
             socketRef.current.disconnect();
         }
-    }, [matchFoundCallback]);
+    }, [matchFoundCallback , setWaitTime, timeLimit]);
 };
 
 export const useSocketTournament = (roomID, updateClient, errorCallback) => {
@@ -88,8 +88,8 @@ export const useSocket = (roomID, setGameData, setAvatar, setTourData, setSpecta
     const socketRef = useRef();
 
     const sendNewMove = (gameIndex, boardIndex) => {
-        if('botManager' in socketRef) {
-            socketRef.botManager.newMove({gameIndex: gameIndex, boardIndex: boardIndex});
+        if('botManager' in socketRef.current) {
+            socketRef.current.botManager.newMove({gameIndex: gameIndex, boardIndex: boardIndex});
         } else {
             socketRef.current.emit(globalConstants.eventTypes.NEW_MOVE_EVENT, {
                 gameIndex: gameIndex,
@@ -99,7 +99,7 @@ export const useSocket = (roomID, setGameData, setAvatar, setTourData, setSpecta
     };
 
     const setSocketAvatar = (avatar) => {
-        if('botManager' in socketRef) socketRef.botManager.setAvatar(avatar);
+        if('botManager' in socketRef.current) socketRef.current.botManager.setAvatar(avatar);
         else
             socketRef.current.emit(globalConstants.eventTypes.SET_AVATAR_EVENT, {
                 avatar: avatar,
@@ -112,7 +112,7 @@ export const useSocket = (roomID, setGameData, setAvatar, setTourData, setSpecta
     };
 
     const sendRpsMove = (move) => {
-        if('botManager' in socketRef) socketRef.botManager.sendRpsMove(move);
+        if('botManager' in socketRef) socketRef.current.botManager.sendRpsMove(move);
         else socketRef.current.emit(globalConstants.eventTypes.RPS_MOVE_EVENT, {move: move});
     }
 
@@ -137,17 +137,20 @@ export const useSocket = (roomID, setGameData, setAvatar, setTourData, setSpecta
 
         socketRef.current.on(globalConstants.eventTypes.UPDATE_EVENT, (data) => {
             console.log('game state updated');
-            if(data.ai && !('botManager' in socketRef)) socketRef.botManager = new BotManager(setGameData, onWin, setRps);
-            if(!('botManager' in socketRef)) {
+            if(data.ai && !('botManager' in socketRef.current)) socketRef.current.botManager = new BotManager(setGameData, onWin, setRps, timeLimit);
+            if(!('botManager' in socketRef.current)) {
                 setAvatar(data.avatar);
                 setGameData(data);
                 if('rps' in data) setRps(data.rps);
             } else if('avatarImage' in data) {
-                socketRef.botManager.avatarImage = data.avatarImage;
+                socketRef.current.botManager.avatarImage = data.avatarImage;
+            }
+            if('timeLimit' in data) {
+                socketRef.current.botManager.timeLimit = data.timeLimit;
             }
             if('tourData' in data) {
                 setTourData(data.tourData);
-                if('botManager' in socketRef) socketRef.botManager.tourData = data.tourData;
+                if('botManager' in socketRef.current) socketRef.current.botManager.tourData = data.tourData;
             }
             console.log(data);
         });

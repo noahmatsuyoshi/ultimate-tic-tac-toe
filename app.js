@@ -178,7 +178,7 @@ io.on("connection", async (socket) => {
     let { roomID, tournament, matchmaking, rps, timeLimit } = socket.handshake.query;
     rps = rps === "true";
     if(timeLimit) timeLimit = 1000*parseInt(timeLimit);
-    if(roomID && roomID !== "undefined") {
+    if(roomID && roomID !== "undefined" && roomID !== "ai") {
         if(isNaN(parseInt(roomID.charAt(0)))) return;
         roomID = globalConstants.sanitize(roomID).toLowerCase();
         const instanceIndex = parseInt(roomID.charAt(0));
@@ -193,8 +193,8 @@ io.on("connection", async (socket) => {
         roomType = "t";
     } else if(matchmaking) {
         console.log("matchmaking user entered");
-        matchmakingManager.addToken(token, socket);
-    } else if(!roomID || roomID === 'undefined') {
+        matchmakingManager.addToken(token, socket, timeLimit);
+    } else if(roomID === 'ai') {
         roomType = "b";
     }
 
@@ -202,7 +202,7 @@ io.on("connection", async (socket) => {
         if (roomID !== 'undefined' && roomType === 't') {
             id2manager[roomID] = await registerTournamentManager(id2manager, socket, token, roomID, dynamoHelper, rps);
         } else if (roomID === 'undefined' || roomType === 'b') {
-            const manager = await registerBotManager(id2manager[roomID], socket, token, roomID, dynamoHelper);
+            const manager = await registerBotManager(id2manager[roomID], socket, token, roomID, dynamoHelper, timeLimit);
             if (roomID !== 'undefined') id2manager[roomID] = manager;
         } else {
             if (roomType === "t") {
@@ -222,7 +222,11 @@ io.on("connection", async (socket) => {
                 const activeTokens = id2manager[roomID].activeTokens;
                 activeTokens.delete(token);
                 socket.leave(roomID);
-                if (activeTokens.size === 0) startTimer(socket, id2manager[roomID], id2manager);
+                if (activeTokens.size === 0)
+                    startTimer(socket, id2manager[roomID], id2manager,
+                        roomType === 't' ?
+                            globalConstants.miscParameters.tournamentTimeout :
+                            globalConstants.miscParameters.roomTimeout);
             }
         }
     });

@@ -12,6 +12,7 @@ import {getToken} from "./js/constants";
 import Cookies from 'universal-cookie';
 import ReactGA from 'react-ga4';
 import {GA_TRACKING_ID} from "./js/constants";
+import {TimeLimit} from "./components/js/timeLimit";
 
 ReactGA.initialize(GA_TRACKING_ID);
 
@@ -77,14 +78,25 @@ function MainMenu(props) {
 }
 
 function FindRoomOption(props) {
+    const [timeLimit, setTimeLimit] = useState(30);
+    const [timeLimitEnabled, setTimeLimitEnabled] = useState(false);
+
     return (
-        <Link to={`/matchmaking/`} className="link">
-            <button className="menu-cell menu-cell-first find-room" onClick={() => {
-                props.eventTracker('findRoom', 'click');
-            }}>
-                Find Random Opponent
-            </button>
-        </Link>
+        <div className='menu-cell menu-cell-first find-room'>
+            <div className="vertical-list">
+                <div className="vertical-list-child">
+                    <Link to={timeLimitEnabled ? `/matchmaking/${timeLimit}` : `/matchmaking/`} className="link">
+                        <button className='menu-button find-room' onClick={() => {
+                            props.eventTracker('findRoom', 'click');
+                        }}>
+                            Find Random Opponent
+                        </button>
+                    </Link>
+                </div>
+                <TimeLimit {...props} timeLimit={timeLimit} setTimeLimit={setTimeLimit}
+                           timeLimitEnabled={timeLimitEnabled} setTimeLimitEnabled={setTimeLimitEnabled} />
+            </div>
+        </div>
     );
 }
 
@@ -105,25 +117,10 @@ function CreateRoomOption(props) {
                         </button>
                     </Link>
                 </div>
-                <div className="vertical-list-child">
-                    <div className="time-limit-container">
-                        <input className="time-limit-checkbox" type="checkbox" checked={timeLimitEnabled} onChange={
-                            () => {
-                                props.eventTracker('timeLimitEnabled', timeLimitEnabled ? 'off' : 'on');
-                                setTimeLimitEnabled(!timeLimitEnabled);
-                            }
-                        }/>
-                        {timeLimitEnabled ? <div className="time-limit-text-label">
-                            <input size={1} className="time-limit-input" type="number"
-                                   value={timeLimit} onChange={e => {setTimeLimit(e.target.value)}} /> seconds
-                        </div> : <div className="time-limit-text-label">
-                            time limit?
-                        </div>}
-                    </div>
-                </div>
+                <TimeLimit {...props} timeLimit={timeLimit} setTimeLimit={setTimeLimit}
+                           timeLimitEnabled={timeLimitEnabled} setTimeLimitEnabled={setTimeLimitEnabled} />
             </div>
         </div>
-
     );
 }
 
@@ -167,14 +164,25 @@ function JoinRoomOption(props) {
 }
 
 function BotOption(props) {
+    const [timeLimit, setTimeLimit] = useState(30);
+    const [timeLimitEnabled, setTimeLimitEnabled] = useState(false);
+
     return (
-        <Link to={`/play/`} className="link">
-            <button type='button' className='menu-cell menu-cell-first play-bot' onClick={() => {
-                props.eventTracker('playAI', 'click');
-            }}>
-                Play Against Easy AI
-            </button>
-        </Link>
+        <div className='menu-cell menu-cell-first play-bot'>
+            <div className="vertical-list">
+                <div className="vertical-list-child">
+                    <Link to={timeLimitEnabled ? `/play/ai/${timeLimit}` : `/play/ai`} className="link">
+                        <button className='menu-button play-bot' onClick={() => {
+                            props.eventTracker('playAI', 'click');
+                        }}>
+                            Play AI
+                        </button>
+                    </Link>
+                </div>
+                <TimeLimit {...props} timeLimit={timeLimit} setTimeLimit={setTimeLimit}
+                           timeLimitEnabled={timeLimitEnabled} setTimeLimitEnabled={setTimeLimitEnabled} />
+            </div>
+        </div>
     );
 }
 
@@ -231,14 +239,25 @@ function JoinTournamentOption(props) {
 }
 
 function OfflineOption(props) {
+    const [timeLimit, setTimeLimit] = useState(30);
+    const [timeLimitEnabled, setTimeLimitEnabled] = useState(false);
+
     return (
-        <Link to={`/playoffline/`} className="link" onClick={() => {
-            props.eventTracker('playOffline', 'click');
-        }}>
-            <button type='button' className='menu-cell menu-cell-first play-offline'>
-                Play Offline
-            </button>
-        </Link>
+        <div className='menu-cell menu-cell-first play-offline'>
+            <div className="vertical-list">
+                <div className="vertical-list-child">
+                    <Link to={timeLimitEnabled ? `/playoffline/${timeLimit}` : `/playoffline/`} className="link">
+                        <button className='menu-button play-offline' onClick={() => {
+                            props.eventTracker('playOffline', 'click');
+                        }}>
+                            Play Offline
+                        </button>
+                    </Link>
+                </div>
+                <TimeLimit {...props} timeLimit={timeLimit} setTimeLimit={setTimeLimit}
+                           timeLimitEnabled={timeLimitEnabled} setTimeLimitEnabled={setTimeLimitEnabled} />
+            </div>
+        </div>
     );
 }
 
@@ -471,11 +490,10 @@ class App extends PureComponent {
         return (
             <Switch>
                 <Route exact path="/" component={MainMenu}/>
-                <Route exact path="/matchmaking" component={Matchmaking}/>
+                <Route exact path="/matchmaking/:timeLimit?" component={Matchmaking}/>
                 <Route exact path="/tournament/:roomID" component={Tournament}/>
                 <Route exact path="/play/:roomID/:timeLimit?" component={Online}/>
-                <Route exact path="/play/" component={Online}/>
-                <Route exact path="/playoffline/" component={Offline}/>
+                <Route exact path="/playoffline/:timeLimit?" component={Offline}/>
                 <Route exact path="/logout/" component={Logout}/>
                 <Route exact path="/stats/" component={PlayerStats}/>
             </Switch>

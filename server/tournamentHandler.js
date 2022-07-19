@@ -256,7 +256,10 @@ class TournamentManager extends Manager {
     }
 
     initializeMatch(round, position, token1, token2) {
-        const roomID = `${this.id}_${round}_${position}`;
+        let roomID = `${this.id}_${round}_${position}`;
+        if(token1.startsWith("AI") || token2.startsWith("AI")) {
+            roomID += "_ai"
+        }
         this.tokenToRoom[token1] = roomID;
         this.tokenToRoom[token2] = roomID;
         if(token1 === "" || token2 === "") {
@@ -282,7 +285,7 @@ class TournamentManager extends Manager {
                 onWin: winnerToken => this.onWin(round, position, winnerToken),
             }
             if(token1.startsWith("AI") || token2.startsWith("AI"))
-                this.id2manager[roomID] = new BotManager(roomID, tourData)
+                this.id2manager[roomID] = new BotManager(roomID, 1000*this.settings.timeLimit, tourData)
             else {
                 this.dynamoHelper.getGame(roomID).then(gameData => {
                     let firstToken = null;
@@ -300,7 +303,7 @@ class TournamentManager extends Manager {
                                 "timeLimit": this.settings.timeLimit.toString()
                             })
                     }
-                    this.id2manager[roomID] = new RoomManager(roomID, this.dynamoHelper, firstToken, tourData, gameData, this.rps, this.settings.timeLimit);
+                    this.id2manager[roomID] = new RoomManager(roomID, this.dynamoHelper, firstToken, tourData, gameData, this.rps, 1000*this.settings.timeLimit);
                 })
             }
         }

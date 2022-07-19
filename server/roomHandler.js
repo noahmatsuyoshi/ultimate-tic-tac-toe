@@ -26,7 +26,7 @@ class RoomHandler extends SocketHandler {
 
     setupUpdateEvent() {
         this.socket.on(globalConstants.eventTypes.UPDATE_EVENT, () => {
-            if(this.manager.playerTokens.keys.length >= 2) {
+            if(this.manager.playerTokens.length >= 2) {
                 const data = this.manager.getClientData(this.token);
                 this.socket.emit(globalConstants.eventTypes.UPDATE_EVENT, data);
             }
@@ -115,7 +115,7 @@ class RoomManager extends Manager {
             if(!this.playerTokens.hasKey(token)) {
                 this.playerTokens.set(token, "");
             }
-            if(this.playerTokens.keys.length === 2) {
+            if(this.playerTokens.length === 2) {
                 if(this.rpsMoves) {
                     if (this.playerTokens.values.every(v => v === "")) {
                         const [k1, k2] = this.playerTokens.keys;
@@ -227,7 +227,8 @@ class RoomManager extends Manager {
             "playerTokens": JSON.stringify(this.playerTokens.map),
             "avatarToImage": JSON.stringify(this.avatarToImage),
         });
-        this.startGame();
+        if(this.playerTokens.length === 2)
+            this.startGame();
     }
 
     getRandomMoveFromBoard(gameIndex) {
@@ -238,8 +239,9 @@ class RoomManager extends Manager {
     }
 
     getRandomMove() {
+        if(this.room.nextIndex === undefined) return;
         let gameIndex = this.room.nextIndex;
-        if((gameIndex === -1) || (this.room.wonBoards[gameIndex] !== null)) {
+        if((gameIndex === -1) || (this.room.wonBoards && this.room.wonBoards[gameIndex] !== null)) {
             for(let i = 0; i < 9; i++) {
                 if(this.room.wonBoards[i] === null) {
                     gameIndex = i;

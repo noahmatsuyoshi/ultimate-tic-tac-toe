@@ -358,9 +358,6 @@ class DynamoHelper {
         const [n, d] = placement.split("/").map(p => parseFloat(p));
         if(n === 1)
             await this.addScore(token, "tournamentWins", 1);
-        else {
-            await this.addScore(token, "xp", Math.ceil(Math.log(d) + (3 * (d - n) / n)));
-        }
     }
 
     async updateBestTournamentPlacement(token, newPlacement) {

@@ -63,6 +63,8 @@ export const heuristics = Object.freeze({
     simulateFactor: 0.05,
 })
 
+const INSTANCE_COUNT = 3;
+
 export function convertCamelCaseToUpper(str) {
     return str.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
 }
@@ -83,10 +85,35 @@ export function sleep(duration) {
     });
 }
 
+function getRandomMoveFromBoard(gameData, gameIndex) {
+    for(let i = 0; i < 9; i++) {
+        if(gameData.boards[gameIndex][i] === null) return {gameIndex, boardIndex: i};
+    }
+    return null;
+}
+
+export function getRandomMove(gameData) {
+    let gameIndex = gameData.nextIndex;
+    if((gameIndex === -1) || (gameData.wonBoards && gameData.wonBoards[gameIndex] !== null)) {
+        for(let i = 0; i < 9; i++) {
+            if(gameData.wonBoards[i] === null) {
+                gameIndex = i;
+                break;
+            }
+        }
+    }
+    return getRandomMoveFromBoard(gameData, gameIndex);
+}
+
+function getRandomInstanceIndex() {
+    return Math.floor((Math.random() * INSTANCE_COUNT) + 1);
+}
+export { getRandomInstanceIndex }
+
 export function generateUID() {
-    var firstPart = (Math.random() * 46656) | 0;
-    var secondPart = (Math.random() * 46656) | 0;
-    const instanceIndex = Math.floor((Math.random() * 3) + 1).toString();
+    let firstPart = (Math.random() * 46656) | 0;
+    let secondPart = (Math.random() * 46656) | 0;
+    const instanceIndex = getRandomInstanceIndex().toString();
     firstPart = ("000" + firstPart.toString(36)).slice(-3);
     secondPart = ("000" + secondPart.toString(36)).slice(-3);
     return instanceIndex + firstPart + secondPart;
