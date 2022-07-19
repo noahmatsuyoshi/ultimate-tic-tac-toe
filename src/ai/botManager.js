@@ -3,10 +3,11 @@ import * as mctsTrain from './MctsTrain';
 import { MctsNode } from './MctsNode';
 
 export class BotManager {
-    constructor(onNewMove, onWin, setRps) {
+    constructor(onNewMove, onWin, setRps, timeLimit) {
         this.onNewMove = onNewMove;
         this.onWin = onWin;
         this.setRps = setRps;
+        this.timeLimit = timeLimit;
         this.avatar = "";
         this.avatarToImage = {};
         this.timer = {lastTime: Date.now()};
@@ -27,6 +28,7 @@ export class BotManager {
             nextIndex: this.rootNode.nextIndex,
             avatarToImage: this.avatarToImage,
             allowRestart: !('tourData' in this),
+            countdown: this.timeLimit,
         });
     }
 

@@ -12,8 +12,8 @@ const gameSchemaJSON = {
         type: "int",
     },
     dateCreated: {
-        dynamoAttrType: "M",
-        type: "map",
+        dynamoAttrType: "N",
+        type: "int",
     },
     firstPlayer: {
         dynamoAttrType: "S",

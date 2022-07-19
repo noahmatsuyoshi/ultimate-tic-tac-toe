@@ -6,9 +6,11 @@ import { calculateWinner, calculateTie } from './winChecks';
 import RPS from '../components/js/rps';
 import '../css/game.css';
 import { useInterval } from '../hooks/useInterval';
+import { getRandomMove } from './constants'
 
 export function ConnectionHandler(props) {
-  const { roomID, timeLimit } = useParams();
+  let { roomID, timeLimit } = useParams();
+  if(timeLimit) timeLimit = parseInt(timeLimit);
   const [switchTourney, setSwitchTourney] = useState(false);
   return (
     switchTourney ? <Redirect to={`/tournament/${roomID}`} /> :
@@ -29,9 +31,11 @@ function WaitingRoom(props) {
 
 function RestartButton(props) {
   return (
-    <button onClick={props.restartGame} className='menu-button join-room'>
-      Restart Game
-    </button>
+      <div className="vertical-list-child">
+        <button onClick={props.restartGame} className='menu-button join-room'>
+          Restart Game
+        </button>
+      </div>
   );
 }
 
@@ -116,7 +120,7 @@ function InfoDisplay(props) {
               <br/>
               {gamesWonElement}
             </div>}
-        {props.gameData.countdown ? <div className="countdown-text">{Math.max(0, props.gameData.countdown)}</div> : <div/>}
+        {props.gameData.countdown ? <div className="countdown-text">{Math.max(0, Math.floor(props.gameData.countdown / 1000))}</div> : <div/>}
       </div>
   )
 }
@@ -153,14 +157,20 @@ function OnlineGame(props) {
   })
   const [rps, setRps] = useState({on: false, active: false, winner: false, move: null});
 
+  const { sendNewMove, restartGame, setSocketAvatar, sendRpsMove } = useSocket(props.roomID, setGameData, setAvatar, setTourData, setSpectator, props.setSwitchTourney, setRps, props.timeLimit);
+
   useInterval(() => {
-    if(!('countdown' in gameData)) return;
+    if(!('countdown' in gameData) || (gameData.countdown === null)) return;
     const gameDataCopy = Object.assign({}, gameData);
-    gameDataCopy.countdown -= 1;
+    gameDataCopy.countdown -= 1000;
+    if((gameDataCopy.countdown === 0) && (props.roomID.endsWith("ai"))) {
+      gameDataCopy.countdown = props.timeLimit;
+      const randomMove = getRandomMove(gameData);
+      if(randomMove !== null)
+        sendNewMove(randomMove.gameIndex, randomMove.boardIndex);
+    }
     setGameData(gameDataCopy);
   }, 1000);
-
-  const { sendNewMove, restartGame, setSocketAvatar, sendRpsMove } = useSocket(props.roomID, setGameData, setAvatar, setTourData, setSpectator, props.setSwitchTourney, setRps, props.timeLimit);
 
   return (
     gameData.boards === null ? 
@@ -175,6 +185,25 @@ function OnlineGame(props) {
   )
 }
 
+function setNewMoveOffline(gameData, setGameData, gameIndex, boardIndex, updateWonBoardsCallback=null) {
+  const gameDataCopy = Object.assign({}, gameData);
+  const boards = gameDataCopy.boards.slice();
+  const board = boards[gameIndex].slice();
+  board[boardIndex] = gameData.myTurn ? 'X' : 'O';
+  boards[gameIndex] = board;
+  gameDataCopy.boards = boards;
+  if(updateWonBoardsCallback)
+    updateWonBoardsCallback(gameDataCopy, gameIndex);
+
+  let nextIndex = boardIndex;
+  if(gameDataCopy.wonBoards[nextIndex] !== null)
+    nextIndex = -1;
+  gameDataCopy.nextIndex = nextIndex;
+  gameDataCopy.myTurn = !gameDataCopy.myTurn;
+
+  setGameData(gameDataCopy);
+}
+
 export function OfflineGame(props) {
   const [gameData, setGameData] = useState({
     myTurn: true,
@@ -182,6 +211,7 @@ export function OfflineGame(props) {
     wonBoards: Array(9).fill(null),
     nextIndex: -1,
     avatarToImage: {},
+    countdown: null,
   });
   const [tourData, setTourData] = useState({
     tourID: "",
@@ -189,8 +219,31 @@ export function OfflineGame(props) {
     gamesPlayed: 0,
     gameWinCount: {},
   })
+  let { timeLimit } = useParams();
+  if(timeLimit && (gameData.countdown === null)) setGameData({...gameData, countdown: 1000*parseInt(timeLimit)});
+
+  const setGameDataOffline = (data) => {
+    if(timeLimit)
+      data.countdown = 1000*parseInt(timeLimit);
+    setGameData(data);
+  }
+
+  useInterval(() => {
+    if(!('countdown' in gameData) || (gameData.countdown === null)) return;
+    const gameDataCopy = Object.assign({}, gameData);
+    gameDataCopy.countdown -= 1000;
+    if(gameDataCopy.countdown === 0) {
+      const randomMove = getRandomMove(gameData);
+      if(randomMove !== null) {
+        setNewMoveOffline(gameDataCopy, setGameDataOffline, randomMove.gameIndex, randomMove.boardIndex)
+      }
+    } else {
+      setGameData(gameDataCopy);
+    }
+  }, 1000);
+
   return (
-    <GameContainer tourData={tourData} gameData={gameData} setGameData={setGameData} {...props}/>
+    <GameContainer tourData={tourData} gameData={gameData} setGameData={setGameDataOffline} {...props}/>
   )
 }
 
@@ -243,22 +296,7 @@ class Game extends PureComponent {
     if(this.props.sendNewMove) {
       this.props.sendNewMove(gameIndex, boardIndex);
     } else {
-      const gameData = Object.assign({}, this.props.gameData);
-      const boards = gameData.boards.slice();
-      const board = boards[gameIndex].slice();
-      board[boardIndex] = this.props.gameData.myTurn ? 'X' : 'O';
-      boards[gameIndex] = board;
-      gameData.boards = boards;
-      this.updateWonBoards(gameData, gameIndex);
-      
-      let nextIndex = boardIndex;
-      if(gameData.wonBoards[nextIndex] !== null) {
-        nextIndex = -1;
-      }
-      gameData.nextIndex = nextIndex;
-      gameData.myTurn = !gameData.myTurn;
-
-      this.props.setGameData(gameData);
+      setNewMoveOffline(this.props.gameData, this.props.setGameData, gameIndex, boardIndex, this.updateWonBoards);
     }
   }
 

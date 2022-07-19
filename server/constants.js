@@ -5,7 +5,8 @@ const miscParameters = Object.freeze({
     SOCKET_SERVER_PORT: "80",
     defaultPlayerName: "Player",
     timeout: 60 * 60 * 1000, // 1 hour
-    checkTimeoutDelay: 10 * 60 * 1000, // 10 minutes
+    roomTimeout: 10 * 60 * 1000, // 10 minutes
+    tournamentTimeout: 60 * 60 * 1000, // 60 minutes
     matchmakingPingInterval: 5 * 1000, // 5 seconds
     turnTimerInterval: 1000, // 1 second
 });
@@ -174,8 +175,25 @@ class TwoWayMap {
     get entries() {
         return Object.entries(this.map);
     }
+
+    get length() {
+        return Object.keys(this.map).length;
+    }
 }
 module.exports.TwoWayMap = TwoWayMap;
+
+module.exports.getRandomInstanceIndex = function () {
+    return Math.floor((Math.random() * process.env.INSTANCE_COUNT) + 1);
+}
+
+module.exports.generateUID = function () {
+    var firstPart = (Math.random() * 46656) | 0;
+    var secondPart = (Math.random() * 46656) | 0;
+    const instanceIndex = module.exports.getRandomInstanceIndex().toString();
+    firstPart = ("000" + firstPart.toString(36)).slice(-3);
+    secondPart = ("000" + secondPart.toString(36)).slice(-3);
+    return instanceIndex + firstPart + secondPart;
+}
 
 const sleep = (duration) => {
     return new Promise(resolve => {
@@ -187,23 +205,23 @@ const sleep = (duration) => {
 module.exports.sleep = sleep;
 
 module.exports.turnTimer = async (timeLimit, roomManager, timeoutCallback) => {
-    while(roomManager.active) {
-        if(roomManager.lastMoveTime + 1000*timeLimit <= Date.now()) timeoutCallback();
-        roomManager.countdown -= 1;
+    while(roomManager.active && (roomManager.room.nextIndex !== undefined)) {
+        if(roomManager.lastMoveTime + timeLimit <= Date.now()) timeoutCallback();
+        roomManager.countdown -= 1000;
         await sleep(miscParameters.turnTimerInterval);
     }
 }
 
-module.exports.checkTimeoutRoutine = async (manager, timeoutCallback) => {
+module.exports.checkTimeoutRoutine = async (manager, timeoutCallback, timeout) => {
     const timer = manager.timer;
     while(manager.active) {
-        if(module.exports.checkTimeout(timer, timeoutCallback)) return;
-        await sleep(miscParameters.checkTimeoutDelay);
+        if(module.exports.checkTimeout(timer, timeoutCallback, timeout)) return;
+        await sleep(timeout);
     }
 }
 
-const checkTimeout = (timer, timeoutCallback) => {
-    if(Date.now() - timer.lastTime > module.exports.timeout) {
+const checkTimeout = (timer, timeoutCallback, timeout) => {
+    if(Date.now() - timer.lastTime > timeout) {
         timeoutCallback();
         return true;
     }
@@ -248,11 +266,12 @@ const validation = {
     },
     tourChangeSettings: {
         bestOf: {
-            type: "string",
+            type: "number",
             func: (v) => {
                 if(v.match(num_regex)[0] !== v) return null;
-                if(parseInt(v) % 2 == 0) return false;
-                return true;
+                const newV = parseInt(v);
+                if(newV % 2 == 0) return null;
+                return newV;
             },
         },
         ai: {
@@ -263,7 +282,7 @@ const validation = {
             func: (v) => {
                 if(!v.match(num_regex)) return null;
                 if (!Number.isInteger(Math.log2(parseInt(v)))) return null;
-                return v;
+                return parseInt(v);
             },
         },
         timeLimitEnabled: {
@@ -327,6 +346,14 @@ function _validate(checks, data, res=null) {
                 v = sanitize(data[k]);
             }
         }
+        if('func' in check) {
+            const newV = check.func(v, res);
+            if(newV === null) {
+                return null;
+            } else {
+                v = newV;
+            }
+        }
         if('type' in check) {
             if(typeof v !== check.type) return null;
             if('minLength' in check && v.length < check.minLength) {
@@ -341,7 +368,6 @@ function _validate(checks, data, res=null) {
                 res.status(400).send();
                 return null;
             }
-            if('func' in check && !check.func(v, res)) return null;
             if('min' in check && v < check.min) return null;
             if('max' in check && v > check.max) return null;
         } else {

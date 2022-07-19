@@ -5,7 +5,7 @@ module.exports.initHandler = async (manager, socket, id, token, Handler) => {
     manager.handlers[token] = handler;
 }
 
-module.exports.startTimer = (socket, manager, id2manager) => {
+module.exports.startTimer = (socket, manager, id2manager, timeout) => {
     console.log("idle timer started")
     manager.timer = {lastTime: Date.now()}
     globalConstants.checkTimeoutRoutine(manager, () => {
@@ -17,5 +17,5 @@ module.exports.startTimer = (socket, manager, id2manager) => {
         delete id2manager[manager.id];
         console.log("timeout");
         socket.disconnect();
-    });
+    }, timeout);
 }

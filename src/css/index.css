@@ -38,6 +38,7 @@ html, body, #reactapp, .App, #app {
     font-size: 3vmin;
     border-radius: 5px;
     vertical-align: center;
+    max-width: 25vmin;
 }
 
 .project-info {
@@ -203,7 +204,7 @@ ol, ul {
     align-items: center;
     justify-content: space-around;
     align-content: center;
-    font-size: 5vmin;
+    font-size: 4vmin;
     color: black;
     font-weight: bold;
     line-height: 6vmin;
@@ -285,7 +286,7 @@ ol, ul {
 
 .player-stats-button-container {
     flex: 0.3;
-    height: 4vmin;
+    height: 5vmin;
 }
 
 .exp-bar-player-stats-container {
@@ -295,8 +296,8 @@ ol, ul {
 }
 
 .player-stats-button {
-    height: 4vmin;
-    width: fit-content;
+    height: 4.5vmin;
+    width: 100%;
     font-size: 3vmin;
     border-radius: 5px;
     vertical-align: center;

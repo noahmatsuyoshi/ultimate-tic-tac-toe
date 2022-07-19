@@ -29,10 +29,11 @@ class BotHandler extends SocketHandler {
 }
 
 class BotManager extends Manager {
-    constructor(id, tourData=null) {
+    constructor(id, timeLimit, tourData=null) {
         super(id);
         if(tourData) this.tourData = tourData;
         this.type = 'b';
+        this.timeLimit = timeLimit;
         this.timer = {lastTime: Date.now()};
         this.tokenToImage = {};
     }
@@ -57,6 +58,7 @@ class BotManager extends Manager {
         }
         clientData.ai = true;
         clientData.avatarImage = this.avatarImage;
+        if(this.timeLimit) clientData.timeLimit = this.timeLimit;
         return clientData;
     }
 
@@ -82,9 +84,9 @@ class BotManager extends Manager {
 }
 module.exports.BotManager = BotManager;
 
-module.exports.registerBotManager = async (manager, socket, token, id, dynamoHelper) => {
+module.exports.registerBotManager = async (manager, socket, token, id, dynamoHelper, timeLimit) => {
     id = id !== 'undefined' ? id : token;
-    if(!manager) manager = new BotManager(id);
+    if(!manager) manager = new BotManager(id, timeLimit);
     await initHandler(manager, socket, id, token, BotHandler);
     const user = await dynamoHelper.getUser(token);
     if(('avatarBase64' in user) && (user.avatarBase64 !== ""))

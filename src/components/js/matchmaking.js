@@ -1,6 +1,6 @@
 import {useSocketMatchmaking} from "../../js/socket";
 import {useState} from 'react';
-import {Redirect} from 'react-router-dom';
+import {Redirect, useParams} from 'react-router-dom';
 import '../css/matchmaking.css';
 
 function FindingMatch(props) {
@@ -21,16 +21,18 @@ function FindingMatch(props) {
     );
 }
 
+function MatchmakingDisplay(props) {
+    if(props.roomID) {
+        return (<Redirect to={`/play/${props.roomID}`} />);
+    } else {
+        return (<FindingMatch averageWaitTimeInSeconds={props.waitTime}/>);
+    }
+}
+
 export default function Matchmaking(props) {
     const [roomID, setRoomID] = useState(null);
     const [waitTime, setWaitTime] = useState(5);
-    const matchFoundCallback = ((roomID) => {
-        setRoomID(roomID);
-    }).bind(this);
-    useSocketMatchmaking(matchFoundCallback, setWaitTime);
-    if(roomID) {
-        return (<Redirect to={`/play/${roomID}`} />);
-    } else {
-        return (<FindingMatch averageWaitTimeInSeconds={waitTime}/>);
-    }
+    const { timeLimit } = useParams();
+    useSocketMatchmaking(setRoomID, setWaitTime, timeLimit);
+    return (<MatchmakingDisplay roomID={roomID} waitTime={waitTime}/>)
 }
