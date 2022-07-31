@@ -39,6 +39,7 @@ html, body, #reactapp, .App, #app {
     border-radius: 5px;
     vertical-align: center;
     max-width: 25vmin;
+    color: black;
 }
 
 .project-info {
@@ -215,6 +216,7 @@ ol, ul {
 
 .link {
     text-decoration: none;
+    color: black;
 }
 
 .menu-cell-inside {
@@ -301,6 +303,7 @@ ol, ul {
     font-size: 3vmin;
     border-radius: 5px;
     vertical-align: center;
+    color: black;
 }
 
 .rps-option {
